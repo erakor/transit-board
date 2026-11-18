@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { BoardView } from '@/components/board-screen';
-import { BOARD, BOARD_ALERTS_DOWN, BOARD_PATH_DOWN, NOW, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/fixtures';
+import { BOARD, BOARD_ALERTS_DOWN, BOARD_PATH_DOWN, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/demo-board';
+import { NOW } from '@/stories/fixtures';
 
 /** 45 rem is the screen height (see globals.css), so a 16:9 screen is 80 x 45 rem at any resolution. */
 const meta = {

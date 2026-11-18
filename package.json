@@ -15,7 +15,8 @@
     "gen:types": "openapi-typescript ${TRANSIT_OPENAPI:-https://$TRANSIT_HOST/openapi.json} -o src/lib/transit-api.d.ts",
     "screenshots": "node scripts/screenshots.mjs",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:storybook": "storybook build --quiet && node scripts/storybook-smoke.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

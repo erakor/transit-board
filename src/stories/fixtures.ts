@@ -1,38 +1,13 @@
 /**
- * Sample data for the stories. The board and its cards come from the real builder run on the demo
- * data (as in test/board.test.ts), so stories show what demo mode shows. The hand-written rows and
- * stations below only cover states the demo data doesn't.
+ * Hand-written sample data for states the demo data doesn't cover: single rows, stations and route
+ * bullets. Static, so stories that only need these never depend on the board builder; the built
+ * demo boards are in ./demo-board.
  */
-import { buildBoard } from '@/lib/board';
-import { EXAMPLE_CONFIG } from '@/lib/config';
-import { demoFetcher } from '@/lib/demo';
-import { TransitError, type Fetcher } from '@/lib/transit';
-import type { BikeCard, Bullet, Dep, Row, Station, TransitCard } from '@/lib/types';
+import { DEMO_NOW } from '@/lib/demo';
+import type { Bullet, Dep, Row, Station } from '@/lib/types';
 
-/** Sunday, June 21 2026, 12:00 in New York. */
-export const NOW = Date.UTC(2026, 5, 21, 16) / 1000;
-
-const demo = demoFetcher(() => NOW);
-
-/** The demo board, with the calls `fails` matches rejected the way an upstream outage would. */
-const demoBoard = (fails: (path: string) => boolean = () => false) => {
-  const fetch: Fetcher = (path, params) => (fails(path) ? Promise.reject(new TransitError(502, 'upstream_unavailable')) : demo(path, params));
-  return buildBoard(EXAMPLE_CONFIG, fetch, NOW, 'storybook');
-};
-
-export const BOARD = await demoBoard();
-export const BOARD_PATH_DOWN = await demoBoard((path) => path === '/path/arrivals');
-export const BOARD_ALERTS_DOWN = await demoBoard((path) => path.endsWith('/alerts'));
-
-const card = <T>(id: string) => BOARD.cards.find((c) => c.id === id) as T;
-export const SUBWAY_CARD = card<TransitCard>('subway-0');
-export const SUBWAY_COMPLEX_CARD = card<TransitCard>('subway-1');
-export const BUS_CARD = card<TransitCard>('bus-2');
-export const PATH_CARD = card<TransitCard>('path-3');
-export const BIKE_CARD = card<BikeCard>('citibike-4');
-export const ALERTS = BOARD.alerts.items;
-
-// Edge cases the demo data doesn't cover --------------------------------------------------------
+/** Sunday, June 21 2026, 12:00 in New York: the same time as the demo boards and the tests. */
+export const NOW = DEMO_NOW;
 
 /** A departure `min` minutes (and `sec` seconds) from NOW. */
 const at = (min: number, sec = 20, extra: Partial<Dep> = {}): Dep => ({ time: NOW + min * 60 + sec, assigned: true, ...extra });

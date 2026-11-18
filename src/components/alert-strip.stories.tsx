@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { AlertStrip, AlertText } from '@/components/alert-strip';
-import { ALERTS } from '@/stories/fixtures';
+import { ALERTS } from '@/stories/demo-board';
 
 const planned = ALERTS.find((a) => a.planned)!;
 

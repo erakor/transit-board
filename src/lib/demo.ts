@@ -1,5 +1,13 @@
 import { TransitError, type Fetcher } from './transit';
 
+/** The reference time the tests and stories use: Sunday, June 21 2026, 12:00 in New York. */
+export const DEMO_NOW = Date.UTC(2026, 5, 21, 16) / 1000;
+
+/** `fetch`, with the calls `fails` matches rejected the way an upstream outage would. */
+export function failingFetcher(fetch: Fetcher, fails: (path: string) => boolean): Fetcher {
+  return (path, params) => (fails(path) ? Promise.reject(new TransitError(502, 'upstream_unavailable')) : fetch(path, params));
+}
+
 const L = { color: '#7C858C', textColor: '#FFFFFF' };
 const G = { color: '#6CBE45', textColor: '#FFFFFF' };
 

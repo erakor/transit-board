@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { BikeCardView, TransitCardView } from '@/components/transit-card';
 import type { Row, TransitCard } from '@/lib/types';
-import { BIKE_CARD, BUS_CARD, NOW, PATH_CARD, ROWS, STATIONS, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/fixtures';
+import { BIKE_CARD, BUS_CARD, PATH_CARD, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/demo-board';
+import { NOW, ROWS, STATIONS } from '@/stories/fixtures';
 
 /** The left column is about 49 rem wide at 1080p, the right one about 28 rem. */
 const wide = (Story: () => React.ReactNode) => <div className="flex w-[49rem] flex-col">{Story()}</div>;
@@ -44,7 +45,11 @@ export const TwoMinutesLater: Story = { args: { now: NOW + 120 } };
 // Rows -----------------------------------------------------------------------------------------
 // Each row state is drawn through a one-row card, so walk time and compact layout come from the card.
 
-const oneRow = (row: Row, base: TransitCard = SUBWAY_CARD, walkMin = base.walkMin): Story => ({ args: { card: { ...base, walkMin, rows: [row] } } });
+const oneRow = (row: Row, base: TransitCard = SUBWAY_CARD, walkMin = base.walkMin): Story => ({
+  args: { card: { ...base, walkMin, rows: [row] } },
+  // buses sit in the narrow right-hand column
+  decorators: base.kind === 'bus' ? [narrow] : [],
+});
 
 export const RowOnTime = oneRow(ROWS.onTime, SUBWAY_CARD, 4);
 /** Leave now: the number becomes "Go". */
@@ -57,10 +62,10 @@ export const RowNotAssigned = oneRow(ROWS.notAssigned, SUBWAY_CARD, 4);
 export const RowTooLate = oneRow(ROWS.tooLate, SUBWAY_CARD, 4);
 export const RowNoTrains = oneRow(ROWS.empty, SUBWAY_CARD, 4);
 /** A bus route with an active alert gets a warning mark. */
-export const RowBusWithAlert = { ...oneRow(ROWS.busWithAlert, BUS_CARD), decorators: [narrow] };
-export const RowBusAtStop = { ...oneRow(ROWS.busAtStop, BUS_CARD, 1), decorators: [narrow] };
-export const RowBusCancelled = { ...oneRow(ROWS.busCancelled, BUS_CARD), decorators: [narrow] };
-export const RowBusAtTerminal = { ...oneRow(ROWS.busAtTerminal, BUS_CARD), decorators: [narrow] };
+export const RowBusWithAlert = oneRow(ROWS.busWithAlert, BUS_CARD);
+export const RowBusAtStop = oneRow(ROWS.busAtStop, BUS_CARD, 1);
+export const RowBusCancelled = oneRow(ROWS.busCancelled, BUS_CARD);
+export const RowBusAtTerminal = oneRow(ROWS.busAtTerminal, BUS_CARD);
 /** PATH rows are compact. */
 export const RowCompact = oneRow(ROWS.path, PATH_CARD);
 

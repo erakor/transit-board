@@ -1,5 +1,4 @@
 import type { Decorator, Preview } from '@storybook/nextjs-vite';
-import { useEffect } from 'react';
 import '../src/app/globals.css';
 
 const SCREENS = { '1080p': '1080px', '4k': '2160px' } as const;
@@ -11,10 +10,9 @@ const SCREENS = { '1080p': '1080px', '4k': '2160px' } as const;
 const withBoardGlobals: Decorator = (Story, context) => {
   const theme = context.globals.theme === 'light' ? 'light' : 'dark';
   const screen = SCREENS[context.globals.screen as keyof typeof SCREENS] ?? SCREENS['1080p'];
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.setProperty('--screen-h', screen);
-  }, [theme, screen]);
+  // set before the story renders, so its first frame already has the right theme and size
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.setProperty('--screen-h', screen);
   return <Story />;
 };
 
