@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { AlertStrip, AlertText } from '@/components/alert-strip';
 import { ALERTS } from '@/stories/fixtures';
 
+const planned = ALERTS.find((a) => a.planned)!;
+
 const meta = {
   title: 'Board/Alert strip',
   component: AlertStrip,
@@ -19,7 +21,7 @@ export const Rotating: Story = {};
 export const SingleAlert: Story = { args: { items: [ALERTS[0]!] } };
 
 /** Planned work gets a muted pill. */
-export const PlannedWork: Story = { args: { items: [ALERTS[1]!] } };
+export const PlannedWork: Story = { args: { items: [planned] } };
 
 /** With no category, the pill falls back to "Alert" or "Planned". */
 export const NoCategory: Story = { args: { items: [{ ...ALERTS[0]!, category: null }] } };

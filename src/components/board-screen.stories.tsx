@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { BoardView } from '@/components/board-screen';
-import { BOARD, NOW, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/fixtures';
+import { BOARD, BOARD_ALERTS_DOWN, BOARD_PATH_DOWN, NOW, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/fixtures';
 
-/** The wall is 1920 x 1080; with 1 rem pinned to 24 px that is 80 x 45 rem. */
+/** 45 rem is the screen height (see globals.css), so a 16:9 screen is 80 x 45 rem at any resolution. */
 const meta = {
   title: 'Board/Board',
   component: BoardView,
@@ -26,10 +26,10 @@ export const Stale: Story = { args: { now: NOW + 240 } };
 
 /** One upstream failed: its card says so and the rest of the board stays normal. */
 export const OnePanelFailed: Story = {
-  args: { board: { ...BOARD, cards: BOARD.cards.map((c) => (c.kind === 'path' ? { ...c, status: 'error' as const, rows: [] } : c)) } },
+  args: { board: BOARD_PATH_DOWN },
 };
 
-export const AlertsUnavailable: Story = { args: { board: { ...BOARD, alerts: { status: 'error', items: [] } } } };
+export const AlertsUnavailable: Story = { args: { board: BOARD_ALERTS_DOWN } };
 
 /** With only subway panels configured, the left column takes the full width. */
 export const SubwayOnly: Story = { args: { board: { ...BOARD, cards: [SUBWAY_CARD, SUBWAY_COMPLEX_CARD], alerts: { status: 'ok', items: [] } } } };

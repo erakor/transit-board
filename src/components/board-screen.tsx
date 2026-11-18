@@ -8,7 +8,7 @@ import { ageText, freshness } from '@/lib/freshness';
 import { clockParts, inQuietHours, longDate } from '@/lib/time';
 import { isDaytime } from '@/lib/sun';
 import { cn } from '@/lib/utils';
-import type { Board } from '@/lib/types';
+import type { Board, Card } from '@/lib/types';
 
 function useThemeParam(): 'light' | 'dark' | null {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
@@ -45,12 +45,11 @@ export function BoardView({ board, now, shift = { x: 0, y: 0 } }: { board: Board
   // time since the last good board, as the server's clock sees it
   const boardAge = now - board.now;
   const state = freshness(boardAge);
-  const cards = board.cards;
   const time = clockParts(now);
   // as in the mockup: subway and PATH on the wide left, buses and Citi Bike on the right
-  const left = cards.filter((c) => c.kind === 'subway' || c.kind === 'path');
-  const right = cards.filter((c) => c.kind === 'bus' || c.kind === 'citibike');
-  const render = (card: (typeof cards)[number]) => {
+  const left = board.cards.filter((c) => c.kind === 'subway' || c.kind === 'path');
+  const right = board.cards.filter((c) => c.kind === 'bus' || c.kind === 'citibike');
+  const render = (card: Card) => {
     const age = now - (card.updatedAt ?? board.now);
     const stale = state === 'stale' || freshness(age) === 'stale';
     const fit = card.kind === 'path' ? 'flex-none' : 'flex-1';

@@ -2,10 +2,10 @@
 
 /*
  * One rem is 1/45 of the screen height (24 px at 1080p, 48 px at 4K): the smallest text is 1rem,
- * 2.2% of the screen, and everything scales with the screen.
+ * 2.2% of the screen, and everything scales with the screen. --screen-h lets Storybook pick a screen.
  */
 html {
-  font-size: calc(100vh / 45);
+  font-size: calc(var(--screen-h, 100vh) / 45);
 }
 
 :root {
@@ -49,13 +49,18 @@ html,
 body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size-adjust: none;
-  cursor: none;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Only on the wall: nobody scrolls it or uses a pointer. */
+[data-kiosk],
+[data-kiosk] body {
+  overflow: hidden;
+  cursor: none;
 }
 
 .tnum {

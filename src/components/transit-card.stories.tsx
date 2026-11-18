@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { BikeCardView, DepartureRow, TransitCardView } from '@/components/transit-card';
+import { BikeCardView, TransitCardView } from '@/components/transit-card';
+import type { Row, TransitCard } from '@/lib/types';
 import { BIKE_CARD, BUS_CARD, NOW, PATH_CARD, ROWS, STATIONS, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/fixtures';
 
 /** The left column is about 49 rem wide at 1080p, the right one about 28 rem. */
@@ -41,33 +42,27 @@ export const LoadError: Story = { args: { card: { ...SUBWAY_CARD, status: 'error
 export const TwoMinutesLater: Story = { args: { now: NOW + 120 } };
 
 // Rows -----------------------------------------------------------------------------------------
+// Each row state is drawn through a one-row card, so walk time and compact layout come from the card.
 
-type RowStory = StoryObj<typeof DepartureRow>;
-const row = (args: Partial<React.ComponentProps<typeof DepartureRow>>): RowStory => ({
-  render: (a) => (
-    <ul className="m-0 list-none rounded-2xl border border-border bg-card px-4 py-0">
-      <DepartureRow {...a} />
-    </ul>
-  ),
-  args: { row: ROWS.onTime, walkSec: 4 * 60, now: NOW, compact: false, ...args },
-});
+const oneRow = (row: Row, base: TransitCard = SUBWAY_CARD, walkMin = base.walkMin): Story => ({ args: { card: { ...base, walkMin, rows: [row] } } });
 
-export const RowOnTime = row({});
+export const RowOnTime = oneRow(ROWS.onTime, SUBWAY_CARD, 4);
 /** Leave now: the number becomes "Go". */
-export const RowGo = row({ row: ROWS.go, walkSec: 7 * 60 });
-export const RowStalled = row({ row: ROWS.stalled });
-export const RowDelayed = row({ row: ROWS.delayed });
+export const RowGo = oneRow(ROWS.go, SUBWAY_CARD, 7);
+export const RowStalled = oneRow(ROWS.stalled, SUBWAY_CARD, 4);
+export const RowDelayed = oneRow(ROWS.delayed, SUBWAY_CARD, 4);
 /** Trains not yet assigned to a trip are shown fainter. */
-export const RowNotAssigned = row({ row: ROWS.notAssigned });
+export const RowNotAssigned = oneRow(ROWS.notAssigned, SUBWAY_CARD, 4);
 /** The only train left can't be reached in time. */
-export const RowTooLate = row({ row: ROWS.tooLate });
-export const RowNoTrains = row({ row: ROWS.empty });
+export const RowTooLate = oneRow(ROWS.tooLate, SUBWAY_CARD, 4);
+export const RowNoTrains = oneRow(ROWS.empty, SUBWAY_CARD, 4);
 /** A bus route with an active alert gets a warning mark. */
-export const RowBusWithAlert = row({ row: ROWS.warn, walkSec: 3 * 60 });
-export const RowBusAtStop = row({ row: ROWS.atStop, walkSec: 60 });
-export const RowBusCancelled = row({ row: ROWS.cancelled, walkSec: 3 * 60 });
-export const RowBusAtTerminal = row({ row: ROWS.atTerminal, walkSec: 3 * 60 });
-export const RowCompact = row({ row: ROWS.path, walkSec: 16 * 60, compact: true });
+export const RowBusWithAlert = { ...oneRow(ROWS.busWithAlert, BUS_CARD), decorators: [narrow] };
+export const RowBusAtStop = { ...oneRow(ROWS.busAtStop, BUS_CARD, 1), decorators: [narrow] };
+export const RowBusCancelled = { ...oneRow(ROWS.busCancelled, BUS_CARD), decorators: [narrow] };
+export const RowBusAtTerminal = { ...oneRow(ROWS.busAtTerminal, BUS_CARD), decorators: [narrow] };
+/** PATH rows are compact. */
+export const RowCompact = oneRow(ROWS.path, PATH_CARD);
 
 // Citi Bike ------------------------------------------------------------------------------------
 

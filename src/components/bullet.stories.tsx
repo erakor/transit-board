@@ -32,14 +32,13 @@ export const Chip: StoryObj<typeof RouteChip> = {
 export const AllRoutes: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        {[BULLETS.L, BULLETS.G, BULLETS.A, BULLETS.N].map((r) => (
-          <RouteBullet key={r.name} route={r} />
-        ))}
-        {[BULLETS.L, BULLETS.G, BULLETS.A, BULLETS.N].map((r) => (
-          <RouteBullet key={`sm-${r.name}`} route={r} size="sm" />
-        ))}
-      </div>
+      {(['md', 'sm'] as const).map((size) => (
+        <div key={size} className="flex items-center gap-3">
+          {[BULLETS.L, BULLETS.G, BULLETS.A, BULLETS.N].map((r) => (
+            <RouteBullet key={r.name} route={r} size={size} />
+          ))}
+        </div>
+      ))}
       <div className="flex items-center gap-3">
         {[BULLETS.B62, BULLETS.B32, BULLETS.NWK, BULLETS.HOB].map((r) => (
           <RouteChip key={r.name} route={r} />
