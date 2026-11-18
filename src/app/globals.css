@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/*
+ * One rem is 1/45 of the screen height (24 px at 1080p, 48 px at 4K): the smallest text is 1rem,
+ * 2.2% of the screen, and everything scales with the screen.
+ */
+html {
+  font-size: calc(100vh / 45);
+}
+
+:root {
+  --background: #f4f4f5;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --muted-foreground: #52525b;
+  --border: #e4e4e7;
+  --ok: #15803d;
+  --warn: #a16207;
+  --bad: #b91c1c;
+  --dim: 0.5;
+}
+
+[data-theme='dark'] {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --muted-foreground: #a1a1aa;
+  --border: #27272a;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size-adjust: none;
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
