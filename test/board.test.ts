@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBoard, groupBuses, mergeAlerts } from '@/lib/board';
+import { buildBoard, groupBuses, mergeAlerts, rowAlert, subwayRowAlerts } from '@/lib/board';
 import { EXAMPLE_CONFIG, boardConfigSchema, loadConfig } from '@/lib/config';
 import { demoFetcher } from '@/lib/demo';
 import { TransitError, transitFetcher, type Fetcher } from '@/lib/transit';
@@ -33,11 +33,27 @@ describe('buildBoard', () => {
     expect(board.cards.filter((c) => c.status === 'ok')).toHaveLength(4);
   });
 
-  it('marks bus rows whose route has an alert', async () => {
+  it('tags bus rows whose route has an alert', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
     const bus = board.cards.find((c) => c.kind === 'bus') as TransitCard;
-    expect(bus.rows.find((r) => r.key.startsWith('B62'))!.warn).toBe(true);
-    expect(bus.rows.find((r) => r.key.startsWith('B32'))!.warn).toBeUndefined();
+    expect(bus.rows.find((r) => r.key.startsWith('B62'))!.alert).toEqual({ label: 'Detour', planned: false });
+    expect(bus.rows.find((r) => r.key.startsWith('B32'))!.alert).toBeUndefined();
+  });
+
+  it('tags subway rows on the route and direction an alert names', async () => {
+    const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
+    const [l, g] = board.cards as TransitCard[];
+    // Brooklyn-bound delays at Bedford Av: the southbound row only
+    expect(l!.rows.map((r) => [r.key, r.alert])).toEqual([['L-N', undefined], ['L-S', { label: 'Delays', planned: false }]]);
+    // planned work at Metropolitan Av in both directions, without the "Planned - " prefix
+    expect(g!.rows.map((r) => r.alert)).toEqual([{ label: 'Stops Skipped', planned: true }, { label: 'Stops Skipped', planned: true }]);
+  });
+
+  it('tags subway rows even without an alerts panel', async () => {
+    const cfg = boardConfigSchema.parse({ ...EXAMPLE_CONFIG, panels: [{ kind: 'subway', stop: 'L08', walkMin: 4 }] });
+    const board = await buildBoard(cfg, demo, NOW, 'v');
+    expect((board.cards[0] as TransitCard).rows[1]!.alert?.label).toBe('Delays');
+    expect(board.alerts).toEqual({ status: 'ok', items: [] });
   });
 
   it('sends only as many rows as the card holds', async () => {
@@ -84,6 +100,23 @@ describe('mergeAlerts', () => {
     const a = (id: string, planned: boolean, priority: number) => ({ id, planned, priority, category: 'x', header: id, description: '', routes: [], stops: [], start: 0, end: null });
     const merged = mergeAlerts([{ updatedAt: 0, alerts: [a('p', true, 30), a('i1', false, 10)] }, { updatedAt: 0, alerts: [a('i1', false, 10), a('i2', false, 20)] }], 5);
     expect(merged.map((m) => m.id)).toEqual(['i2', 'i1', 'p']);
+  });
+});
+
+describe('row alerts', () => {
+  const a = (id: string, planned: boolean, priority: number | null, category: string | null, stops: Array<{ id: string; direction: 'N' | 'S' | null }> = []) => ({
+    id, planned, priority, category, header: id, description: '', routes: [{ id: 'G', name: 'G', color: '', textColor: '' }], stops: stops.map((s) => ({ ...s, name: s.id })), start: 0, end: null,
+  });
+  it('picks incidents over planned work, then the most serious', () => {
+    expect(rowAlert([a('p', true, 30, 'Planned - Suspended'), a('d', false, 26, 'Delays'), a('s', false, 33, 'Part Suspended')])).toEqual({ label: 'Part Suspended', planned: false });
+    expect(rowAlert([a('f', true, null, null)])).toEqual({ label: 'Planned work', planned: true });
+    expect(rowAlert([])).toBeUndefined();
+  });
+  it('keeps alerts for other stations and drops the other direction here', () => {
+    const alerts = [a('elsewhere', false, 26, 'Delays', [{ id: 'G22', direction: 'S' }]), a('north', false, 26, 'Delays', [{ id: 'G29', direction: 'N' }])];
+    expect(subwayRowAlerts(alerts, 'G', 'S', ['G29', 'L10']).map((x) => x.id)).toEqual(['elsewhere']);
+    expect(subwayRowAlerts(alerts, 'G', 'N', ['G29', 'L10']).map((x) => x.id)).toEqual(['elsewhere', 'north']);
+    expect(subwayRowAlerts(alerts, 'L', 'N', ['G29', 'L10'])).toEqual([]);
   });
 });
 

@@ -1,8 +1,8 @@
 import type { BoardConfig, PanelConfig } from './config';
 import { sunTimes } from './sun';
 import { titleCase } from './text';
-import type { AlertsResponse, BusArrivals, Fetcher, NearbyStations, PathArrivals, StationResponse, SubwayArrivals } from './transit';
-import type { AlertItem, BikeCard, Board, Bullet, Card, Dep, Row, Station, TransitCard } from './types';
+import type { AlertsResponse, BusArrivals, Fetcher, NearbyStations, PathArrivals, StationResponse, SubwayAlertsResponse, SubwayArrivals } from './transit';
+import type { AlertItem, BikeCard, Board, Bullet, Card, Dep, Row, RowAlert, Station, TransitCard } from './types';
 
 type Config<K extends PanelConfig['kind']> = Extract<PanelConfig, { kind: K }>;
 
@@ -124,34 +124,81 @@ export async function buildBikeCard(cfg: Config<'citibike'>, fetch: Fetcher, ind
 
 type RawAlert = AlertsResponse['alerts'][number];
 
+/** Incidents before planned work, then the MTA's rank (higher is more serious). */
+const byImportance = (a: RawAlert, b: RawAlert) => Number(a.planned) - Number(b.planned) || (b.priority ?? 0) - (a.priority ?? 0);
+
 export function mergeAlerts(responses: AlertsResponse[], max: number): AlertItem[] {
   const seen = new Map<string, RawAlert>();
   for (const r of responses) for (const a of r.alerts) if (!seen.has(a.id)) seen.set(a.id, a);
   return [...seen.values()]
-    .sort((a, b) => Number(a.planned) - Number(b.planned) || (b.priority ?? 0) - (a.priority ?? 0))
+    .sort(byImportance)
     .slice(0, max)
     .map((a) => ({ id: a.id, header: a.header, category: a.category, planned: a.planned, routes: a.routes.map(bullet) }));
 }
 
-export async function buildAlerts(cfg: Config<'alerts'> | undefined, fetch: Fetcher): Promise<{ status: 'ok' | 'error'; items: AlertItem[]; busDelayRoutes: Set<string> }> {
-  if (!cfg) return { status: 'ok', items: [], busDelayRoutes: new Set() };
-  const calls = [
-    ...cfg.subwayStops.map((stop) => fetch('/subway/alerts', { stop })),
-    ...cfg.busRoutes.map((route) => fetch('/bus/alerts', { route })),
-  ];
-  const results = await Promise.allSettled(calls);
-  const ok = results.flatMap((r) => (r.status === 'fulfilled' ? [cast<AlertsResponse>(r.value)] : []));
-  const busDelayRoutes = new Set<string>();
-  results.slice(cfg.subwayStops.length).forEach((r, i) => {
-    if (r.status !== 'fulfilled') return;
-    const hasDelay = cast<AlertsResponse>(r.value).alerts.some((a) => !a.planned);
-    if (hasDelay) busDelayRoutes.add(cfg.busRoutes[i]!);
+/** The tag for the most serious of these alerts: the MTA's status, without its "Planned - " prefix. */
+export function rowAlert(alerts: RawAlert[]): RowAlert | undefined {
+  const top = [...alerts].sort(byImportance)[0];
+  if (!top) return undefined;
+  const label = (top.category ?? (top.planned ? 'Planned work' : 'Alert')).replace(/^Planned\s*-\s*/, '');
+  return { label, planned: top.planned };
+}
+
+/**
+ * Subway alerts that concern one row: on its route, and in its direction when the alert names this
+ * station only with the other direction's platform.
+ */
+export function subwayRowAlerts(alerts: RawAlert[], route: string, direction: string, stationStops: string[]): RawAlert[] {
+  return alerts.filter((a) => {
+    if (!a.routes.some((r) => r.id === route)) return false;
+    const here = a.stops.filter((s) => stationStops.includes(s.id));
+    return here.length === 0 || here.some((s) => s.direction === null || s.direction === direction);
   });
+}
+
+type Alerts = {
+  status: 'ok' | 'error';
+  items: AlertItem[];
+  /** Answers by subway stop (the alerts panel's and every subway card's) and by bus route, to tag rows. */
+  subway: Map<string, SubwayAlertsResponse>;
+  bus: Map<string, AlertsResponse>;
+};
+
+export async function buildAlerts(cfg: Config<'alerts'> | undefined, subwayCardStops: string[], fetch: Fetcher): Promise<Alerts> {
+  const panelStops = cfg?.subwayStops ?? [];
+  const busRoutes = cfg?.busRoutes ?? [];
+  const subwayStops = [...new Set([...panelStops, ...subwayCardStops])];
+  const [subwayRes, busRes] = await Promise.all([
+    Promise.allSettled(subwayStops.map((stop) => fetch('/subway/alerts', { stop }))),
+    Promise.allSettled(busRoutes.map((route) => fetch('/bus/alerts', { route }))),
+  ]);
+  const subway = new Map<string, SubwayAlertsResponse>();
+  subwayRes.forEach((r, i) => r.status === 'fulfilled' && subway.set(subwayStops[i]!, cast<SubwayAlertsResponse>(r.value)));
+  const bus = new Map<string, AlertsResponse>();
+  busRes.forEach((r, i) => r.status === 'fulfilled' && bus.set(busRoutes[i]!, cast<AlertsResponse>(r.value)));
+  const strip = [...panelStops.flatMap((s) => subway.get(s) ?? []), ...bus.values()];
+  const calls = panelStops.length + busRoutes.length;
   return {
-    status: calls.length > 0 && ok.length === 0 ? 'error' : 'ok',
-    items: mergeAlerts(ok, cfg.maxAlerts),
-    busDelayRoutes,
+    status: calls > 0 && strip.length === 0 ? 'error' : 'ok',
+    items: cfg ? mergeAlerts(strip, cfg.maxAlerts) : [],
+    subway,
+    bus,
   };
+}
+
+/** Tags each row with the most serious alert on its route, from the answers buildAlerts got. */
+function tagRows(card: Card, panel: PanelConfig, alerts: Alerts) {
+  if (card.kind === 'subway' && panel.kind === 'subway') {
+    const res = alerts.subway.get(panel.stop);
+    if (!res) return;
+    const stationStops = res.stop?.stops ?? panel.stop.split('+');
+    for (const row of card.rows) {
+      const cut = row.key.lastIndexOf('-');
+      row.alert = rowAlert(subwayRowAlerts(res.alerts, row.key.slice(0, cut), row.key.slice(cut + 1), stationStops));
+    }
+  } else if (card.kind === 'bus') {
+    for (const row of card.rows) row.alert = rowAlert(alerts.bus.get(row.key.split('|')[0]!)?.alerts ?? []);
+  }
 }
 
 /** A card that failed to load: the rest of the screen stays normal. */
@@ -164,8 +211,9 @@ function failed(cfg: PanelConfig, index: number): Card {
 
 export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: number, version: string): Promise<Board> {
   const alertsCfg = config.panels.find((p): p is Config<'alerts'> => p.kind === 'alerts');
-  // everything fans out in parallel; bus delay alerts mark the bus rows afterwards
-  const [alerts, settled] = await Promise.all([buildAlerts(alertsCfg, fetch), Promise.allSettled(
+  const subwayStops = config.panels.flatMap((p) => (p.kind === 'subway' ? [p.stop] : []));
+  // everything fans out in parallel; alerts tag the subway and bus rows afterwards
+  const [alerts, settled] = await Promise.all([buildAlerts(alertsCfg, subwayStops, fetch), Promise.allSettled(
     config.panels.map((panel, i): Promise<Card | null> => {
       switch (panel.kind) {
         case 'subway':
@@ -186,7 +234,7 @@ export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: numbe
     const panel = config.panels[i]!;
     if (panel.kind === 'alerts') return;
     const card = r.status === 'fulfilled' && r.value ? r.value : failed(panel, i);
-    if (card.kind === 'bus') for (const row of card.rows) if (alerts.busDelayRoutes.has(row.key.split('|')[0]!)) row.warn = true;
+    if (card.status === 'ok') tagRows(card, panel, alerts);
     cards.push(card);
   });
   return {

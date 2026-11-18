@@ -72,9 +72,10 @@ export function demoFetcher(now: () => number): Fetcher {
       case '/subway/alerts':
         return {
           updatedAt: now() - 40,
+          stop: { id: String(params.stop), name: '', stops: String(params.stop).split('+') },
           alerts: [
-            { id: 'lmm:alert:1', planned: false, category: 'Delays', priority: 26, header: 'Brooklyn-bound [L] trains are running with delays while we address a signal problem near Bedford Av.', description: '', routes: [{ id: 'L', name: 'L', ...L }], stops: [], start: now() - 600, end: null },
-            { id: 'lmm:alert:2', planned: true, category: 'Planned - Stops Skipped', priority: 12, header: 'Some [G] trains skip Metropolitan Av this weekend.', description: '', routes: [{ id: 'G', name: 'G', ...G }], stops: [], start: now() - 600, end: null },
+            { id: 'lmm:alert:1', planned: false, category: 'Delays', priority: 26, header: 'Brooklyn-bound [L] trains are running with delays while we address a signal problem near Bedford Av.', description: '', routes: [{ id: 'L', name: 'L', ...L }], stops: [{ id: 'L08', name: 'Bedford Av', direction: 'S' }], start: now() - 600, end: null },
+            { id: 'lmm:alert:2', planned: true, category: 'Planned - Stops Skipped', priority: 12, header: 'Some [G] trains skip Metropolitan Av this weekend.', description: '', routes: [{ id: 'G', name: 'G', ...G }], stops: [{ id: 'G29', name: 'Metropolitan Av', direction: null }], start: now() - 600, end: null },
           ],
         };
       case '/bus/alerts':

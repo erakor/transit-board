@@ -5,6 +5,7 @@ export type SubwayArrivals = Schemas['ArrivalsResponse'];
 export type PathArrivals = Schemas['PathArrivalsResponse'];
 export type BusArrivals = Schemas['BusArrivalsResponse'];
 export type AlertsResponse = Schemas['AlertsResponse'];
+export type SubwayAlertsResponse = Schemas['SubwayAlertsResponse'];
 export type NearbyStations = Schemas['CitibikeNearbyResponse'];
 export type StationResponse = Schemas['CitibikeStationResponse'];
 
