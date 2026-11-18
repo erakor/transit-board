@@ -1,123 +1,182 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RouteBullet } from '@/components/bullet';
+import { RouteBullet, RouteChip } from '@/components/bullet';
 import { clock } from '@/lib/time';
 import { pickDepartures } from '@/lib/leave';
 import { cn } from '@/lib/utils';
 import type { BikeCard, Row, TransitCard } from '@/lib/types';
 
-const ROW_H = 'h-[4.1rem]';
+const TAG: Record<string, string> = { subway: 'Subway', path: 'PATH' };
+
+function Walk({ min }: { min: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[1rem] text-muted-foreground">
+      <svg viewBox="0 0 24 24" className="h-[1.1rem] w-[1.1rem]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="13" cy="4" r="1.6" />
+        <path d="M9 21l2.5-6-2-3 1.5-4 3 3 3 1M11.5 15l3 2 .5 4M10 8l-3 3" />
+      </svg>
+      {min} min walk
+    </span>
+  );
+}
 
 function Message({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-1 items-center justify-center text-[1.15rem] text-muted-foreground">{children}</div>;
 }
 
-function CardShell({ title, right, stale, children }: { title: string; right?: React.ReactNode; stale: boolean; children: React.ReactNode }) {
+function CardShell({ title, tag, right, stale, className, children }: { title: string; tag?: string; right?: React.ReactNode; stale: boolean; className?: string; children: React.ReactNode }) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <span className="shrink-0 text-[1rem] text-muted-foreground">{right}</span>
+        <div className="flex min-w-0 items-baseline gap-3">
+          <CardTitle>{title}</CardTitle>
+          {tag && <span className="shrink-0 text-[1rem] text-muted-foreground">{tag}</span>}
+        </div>
+        {right}
       </CardHeader>
       <CardContent className={cn(stale && 'opacity-60 grayscale')}>{children}</CardContent>
     </Card>
   );
 }
 
-/** Same layout in every transit card: the following trains on the left, the big leave-in number on the right. */
-function DepartureRow({ row, walkSec, now, stale }: { row: Row; walkSec: number; now: number; stale: boolean }) {
-  const d = pickDepartures(row.deps, walkSec, now);
-  const stops = d.primary?.dep.stopsAway;
-  const line2 = d.primary?.dep.stalled
-    ? 'stalled'
-    : d.primary && d.primary.dep.assigned === false
-      ? 'not yet assigned'
-      : d.primary?.dep.delayed
-        ? 'delayed'
-        : stops !== undefined && stops !== null
-          ? stops === 0
-            ? 'at stop'
-            : `${stops} stop${stops === 1 ? '' : 's'} away`
-          : row.sub;
+function Minutes({ value, className }: { value: number; className?: string }) {
   return (
-    <li className={cn('flex items-center gap-3 border-t border-border first:border-t-0', ROW_H)} data-row={row.key}>
-      {row.bullet && <RouteBullet route={row.bullet} />}
+    <span className={cn('tnum', className)}>
+      {value}
+      <span className="text-[1rem] font-normal text-muted-foreground">m</span>
+    </span>
+  );
+}
+
+/** Same layout in every transit card: the following trains on the left, the big leave-in number on the right. */
+function Following({ values, dimmed }: { values: Array<{ min: number; tentative: boolean }>; dimmed?: boolean }) {
+  return (
+    <div className={cn('tnum flex shrink-0 gap-3 text-[1.3rem] font-medium text-muted-foreground', dimmed && 'opacity-60')} aria-label="following trains">
+      {values.map((f, i) => (
+        <Minutes key={i} value={f.min} className={cn(f.tentative && 'opacity-60')} />
+      ))}
+    </div>
+  );
+}
+
+function BigNumber({ d, compact }: { d: ReturnType<typeof pickDepartures>; compact?: boolean }) {
+  if (compact && d.primary)
+    return (
+      <div className="tnum flex w-[10rem] shrink-0 items-baseline justify-end gap-1.5 leading-none">
+        <span className="text-[1.15rem] text-muted-foreground">{clock(d.primary.leaveBy)}</span>
+        <span className="text-[2rem] font-bold">{d.primary.leaveInMin === 0 ? 'Go' : d.primary.leaveInMin}</span>
+        {d.primary.leaveInMin !== 0 && <span className="text-[1.15rem] text-muted-foreground">min</span>}
+      </div>
+    );
+  return (
+    <div className="tnum w-[7rem] shrink-0 text-right leading-none">
+      {d.primary ? (
+        <>
+          <div className={cn('flex items-baseline justify-end gap-1', d.primary.dep.assigned === false && 'opacity-70')}>
+            <span className="text-[2.7rem] font-bold">{d.primary.leaveInMin === 0 ? 'Go' : d.primary.leaveInMin}</span>
+            {d.primary.leaveInMin !== 0 && <span className="text-[1.15rem] text-muted-foreground">min</span>}
+          </div>
+          <div className="mt-0.5 text-[1rem] text-muted-foreground">{clock(d.primary.leaveBy)}</div>
+        </>
+      ) : d.tooLate ? (
+        <div className="text-[1rem] leading-tight text-muted-foreground">
+          too late
+          <div>{clock(d.tooLate.time!)}</div>
+        </div>
+      ) : d.atTerminal ? (
+        <div className="text-[1rem] text-muted-foreground">at terminal</div>
+      ) : (
+        <div className="text-[1.4rem] text-muted-foreground">–</div>
+      )}
+    </div>
+  );
+}
+
+function statusLine(row: Row, d: ReturnType<typeof pickDepartures>): { text: React.ReactNode; warn: boolean } {
+  const dep = d.primary?.dep;
+  if (d.cancelled && !d.primary) return { text: <span><s>{clock(d.cancelled.time!)}</s> cancelled</span>, warn: true };
+  if (dep?.stalled) return { text: 'stalled', warn: true };
+  if (dep?.assigned === false) return { text: 'not yet assigned', warn: false };
+  if (dep?.delayed) return { text: 'delayed', warn: true };
+  const stops = dep?.stopsAway;
+  if (stops !== undefined && stops !== null) return { text: stops === 0 ? 'at stop' : `${stops} stop${stops === 1 ? '' : 's'} away`, warn: false };
+  return { text: row.sub ?? '', warn: false };
+}
+
+const followingOf = (d: ReturnType<typeof pickDepartures>) => d.following.map((f) => ({ min: f.leaveInMin, tentative: f.dep.assigned === false }));
+
+function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: number; now: number; compact?: boolean }) {
+  const d = pickDepartures(row.deps, walkSec, now);
+  const s = statusLine(row, d);
+  return (
+    <li className={cn('flex items-center gap-4 border-t border-border first:border-t-0', compact ? 'h-[3.1rem]' : 'h-[4.4rem]')} data-row={row.key}>
+      {row.bullet && (row.bullet.name.length > 2 ? <RouteChip route={row.bullet} /> : <RouteBullet route={row.bullet} />)}
       <div className="min-w-0 flex-1 leading-tight">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[1.15rem] font-medium">{row.label}</span>
+          <span className="truncate text-[1.25rem] font-medium">{row.label}</span>
           {row.warn && <span className="shrink-0 text-warn" aria-label="alert">⚠</span>}
         </div>
-        <div className={cn('truncate text-[1rem]', d.primary?.dep.stalled || d.primary?.dep.delayed ? 'text-warn' : 'text-muted-foreground')}>
-          {d.cancelled && !d.primary ? (
-            <span>
-              <s>{clock(d.cancelled.time!)}</s> cancelled
-            </span>
-          ) : (
-            line2
-          )}
-        </div>
+        {!compact && <div className={cn('truncate text-[1rem]', s.warn ? 'text-warn' : 'text-muted-foreground')}>{s.text}</div>}
       </div>
-      <div className={cn('tnum flex shrink-0 gap-3 text-[1.15rem] text-muted-foreground', stale ? '' : '')} aria-label="following trains">
-        {d.following.map((f) => (
-          <span key={f.dep.time} className={cn(f.dep.assigned === false && 'opacity-60')}>
-            {f.leaveInMin}
-          </span>
-        ))}
-      </div>
-      <div className="tnum w-[5.2rem] shrink-0 text-right leading-none">
-        {d.primary ? (
-          <>
-            <div className={cn('text-[2.4rem] font-bold', d.primary.dep.assigned === false && 'opacity-70')}>{d.primary.leaveInMin === 0 ? 'Go' : d.primary.leaveInMin}</div>
-            <div className="mt-0.5 text-[1rem] text-muted-foreground">{clock(d.primary.leaveBy)}</div>
-          </>
-        ) : d.tooLate ? (
-          <div className="text-[1rem] text-muted-foreground">too late<div>{clock(d.tooLate.time!)}</div></div>
-        ) : d.atTerminal ? (
-          <div className="text-[1rem] text-muted-foreground">at terminal</div>
-        ) : (
-          <div className="text-[1.4rem] text-muted-foreground">–</div>
-        )}
-      </div>
+      <Following values={followingOf(d)} />
+      <BigNumber d={d} compact={compact} />
     </li>
   );
 }
 
-export function TransitCardView({ card, now, stale }: { card: TransitCard; now: number; stale: boolean }) {
+export function TransitCardView({ card, now, stale, className }: { card: TransitCard; now: number; stale: boolean; className?: string }) {
   const walk = card.walkMin * 60;
   return (
-    <CardShell title={card.title} right={`${card.walkMin} min walk`} stale={stale && card.status === 'ok'}>
+    <CardShell title={card.title} tag={TAG[card.kind]} right={<Walk min={card.walkMin} />} stale={stale && card.status === 'ok'} className={className}>
       {card.status === 'error' ? (
         <Message>Can&rsquo;t load right now. Retrying.</Message>
-      ) : card.rows.length === 0 ? (
-        <Message>No departures soon</Message>
       ) : (
-        <ul className="m-0 flex list-none flex-col p-0">
-          {card.rows.map((r) => (
-            <DepartureRow key={r.key} row={r} walkSec={walk} now={now} stale={stale} />
-          ))}
-        </ul>
+        <>
+          {card.stop && (
+            <div className="flex h-[1.9rem] items-center justify-between text-[1rem] text-muted-foreground">
+              <span className="truncate">{card.stop.name}</span>
+              <span className="tnum shrink-0">#{card.stop.code}</span>
+            </div>
+          )}
+          {card.rows.length === 0 ? (
+            <Message>No departures soon</Message>
+          ) : (
+            <ul className="m-0 flex list-none flex-col p-0">
+              {card.rows.map((r) => (
+                <DepartureRow key={r.key} row={r} walkSec={walk} now={now} compact={card.kind === 'path'} />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </CardShell>
   );
 }
 
-export function BikeCardView({ card, stale }: { card: BikeCard; stale: boolean }) {
+export function BikeCardView({ card, stale, className }: { card: BikeCard; stale: boolean; className?: string }) {
   return (
-    <CardShell title={card.title} right="live docks" stale={stale && card.status === 'ok'}>
+    <CardShell title={card.title} right={<span className="text-[1rem] text-muted-foreground">Live availability</span>} stale={stale && card.status === 'ok'} className={className}>
       {card.status === 'error' ? (
         <Message>Can&rsquo;t load right now. Retrying.</Message>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">
           {card.stations.map((s) => {
             const closed = !s.renting ? 'no rentals' : !s.returning ? 'no returns' : null;
+            const total = Math.max(s.capacity, s.bikes + s.ebikes + s.docks, 1);
             return (
-              <li key={s.id} className={cn('flex items-center gap-3 border-t border-border first:border-t-0', ROW_H)}>
-                <div className="min-w-0 flex-1 leading-tight">
-                  <div className="truncate text-[1.15rem] font-medium">{s.name}</div>
-                  <div className={cn('text-[1rem]', closed ? 'font-medium text-bad' : 'text-muted-foreground')}>{closed ?? `${s.capacity} docks`}</div>
+              <li key={s.id} className="flex h-[6.2rem] flex-col justify-center gap-1 border-t border-border first:border-t-0">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="truncate text-[1.25rem] font-medium">{s.name}</span>
+                  {closed && <span className="shrink-0 text-[1rem] font-medium text-bad">{closed}</span>}
                 </div>
-                <Count label="Classic" value={s.bikes} dim={!s.renting} />
-                <Count label="E-bike" value={s.ebikes} dim={!s.renting} />
-                <Count label="Docks" value={s.docks} dim={!s.returning} />
+                <div className="flex items-end justify-between">
+                  <Stat label="Classic" value={s.bikes} dim={!s.renting} />
+                  <Stat label="E-Bikes" value={s.ebikes} dim={!s.renting} color="text-sky-500" />
+                  <Stat label="Free Docks" value={s.docks} dim={!s.returning} color="text-ok" align="right" />
+                </div>
+                <div className="flex h-[0.4rem] overflow-hidden rounded-full bg-border" aria-hidden>
+                  <div className="bg-foreground" style={{ width: `${(s.bikes / total) * 100}%` }} />
+                  <div className="bg-sky-500" style={{ width: `${(s.ebikes / total) * 100}%` }} />
+                </div>
               </li>
             );
           })}
@@ -127,11 +186,11 @@ export function BikeCardView({ card, stale }: { card: BikeCard; stale: boolean }
   );
 }
 
-function Count({ label, value, dim }: { label: string; value: number; dim: boolean }) {
+function Stat({ label, value, dim, color, align }: { label: string; value: number; dim: boolean; color?: string; align?: 'right' }) {
   return (
-    <div className={cn('tnum w-[4.2rem] text-center leading-none', dim && 'opacity-40 line-through')}>
-      <div className="text-[2rem] font-bold">{value}</div>
-      <div className="mt-0.5 text-[1rem] text-muted-foreground">{label}</div>
+    <div className={cn('tnum leading-none', align === 'right' && 'text-right', dim && 'line-through opacity-40')}>
+      <div className="text-[1rem] text-muted-foreground">{label}</div>
+      <div className={cn('mt-0.5 text-[2.2rem] font-bold', color)}>{value}</div>
     </div>
   );
 }

@@ -33,6 +33,8 @@ export type TransitCard = {
   updatedAt: number | null;
   /** Some upstream feeds failed, so rows may be missing. */
   partial?: boolean;
+  /** Bus stop name and sign code, when the card has exactly one stop. */
+  stop?: { name: string | null; code: string };
   rows: Row[];
 };
 

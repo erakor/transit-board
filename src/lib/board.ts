@@ -38,8 +38,8 @@ export async function buildPathCard(cfg: Config<'path'>, fetch: Fetcher, index: 
   const res = cast<PathArrivals>(await fetch('/path/arrivals', { station: cfg.station, limit: MAX_DEPS }));
   const rows: Row[] = res.groups.map((g) => ({
     key: `${g.route}-${g.direction}`,
-    // PATH route names are long ("Newark - World Trade Center"); the bullet carries the first station's code
-    bullet: bullet({ ...g, name: g.route.split('-')[0]! }),
+    // the route id ("NWK-WTC") is the chip: the route name is too long for it
+    bullet: bullet({ ...g, name: g.route }),
     label: g.headsign,
     sub: g.direction === 'NY' ? 'To New York' : 'To New Jersey',
     deps: g.arrivals.map((a) => ({ time: a.time })),
@@ -88,6 +88,7 @@ export async function buildBusCard(cfg: Config<'bus'>, fetch: Fetcher, index: nu
     status: 'ok',
     updatedAt: Number.isFinite(updated) ? updated : null,
     partial: ok.length < results.length || undefined,
+    stop: cfg.stops.length === 1 ? { name: ok[0]!.stop.name ? titleCase(ok[0]!.stop.name) : null, code: cfg.stops[0]! } : undefined,
     rows: rows.slice(0, cfg.maxRows),
   };
 }

@@ -20,6 +20,15 @@ export function clock(epochSeconds: number): string {
   return new Intl.DateTimeFormat('en-US', { timeZone: TIME_ZONE, hour: 'numeric', minute: '2-digit', hour12: false }).format(new Date(epochSeconds * 1000));
 }
 
+/** "10:56" and the seconds, for the header clock. */
+export function clockParts(epochSeconds: number): { hm: string; ss: string } {
+  return { hm: clock(epochSeconds), ss: String(epochSeconds % 60).padStart(2, '0') };
+}
+
+export function longDate(epochSeconds: number): string {
+  return new Intl.DateTimeFormat('en-US', { timeZone: TIME_ZONE, weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(epochSeconds * 1000));
+}
+
 export function inQuietHours(quiet: [string, string] | null, epochSeconds: number): boolean {
   if (!quiet) return false;
   const toMin = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));

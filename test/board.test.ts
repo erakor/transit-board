@@ -54,7 +54,8 @@ describe('buildBoard', () => {
   });
 
   it('reads Citi Bike closures', async () => {
-    const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
+    const three = boardConfigSchema.parse({ ...EXAMPLE_CONFIG, panels: [{ kind: 'citibike', count: 3 }] });
+    const board = await buildBoard(three, demo, NOW, 'v');
     const bikes = board.cards.find((c) => c.kind === 'citibike') as BikeCard;
     expect(bikes.stations.map((s) => [s.renting, s.returning])).toEqual([[true, true], [true, false], [false, true]]);
   });
@@ -131,10 +132,18 @@ describe('checkKey', () => {
   });
 });
 
+describe('bus card', () => {
+  it('names the stop when there is exactly one', async () => {
+    const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
+    const bus = board.cards.find((c) => c.kind === 'bus') as TransitCard;
+    expect(bus.stop).toEqual({ name: 'Berry St/N 8 St', code: '308209' });
+  });
+});
+
 describe('PATH rows', () => {
-  it('use a short bullet and the headsign as the label', async () => {
+  it('are chips named by route id, labelled with the headsign', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
     const path = board.cards.find((c) => c.kind === 'path') as TransitCard;
-    expect(path.rows.map((r) => [r.bullet?.name, r.label])).toEqual([['NWK', 'Newark'], ['HOB', 'Hoboken']]);
+    expect(path.rows.map((r) => [r.bullet?.name, r.label])).toEqual([['NWK-WTC', 'Newark'], ['HOB-WTC', 'Hoboken']]);
   });
 });

@@ -11,7 +11,7 @@ const subway = z.object({
   /** Rider-facing names for the N and S platforms, such as Manhattan / Brooklyn. */
   labels: z.object({ N: z.string().optional(), S: z.string().optional() }).default({}),
   title: z.string().optional(),
-  maxRows: z.number().int().min(1).max(6).default(4),
+  maxRows: z.number().int().min(1).max(6).default(2),
 });
 
 const bus = z.object({
@@ -20,7 +20,7 @@ const bus = z.object({
   stops: z.array(z.string().min(1)).min(1),
   walkMin,
   title: z.string().optional(),
-  maxRows: z.number().int().min(1).max(6).default(4),
+  maxRows: z.number().int().min(1).max(6).default(3),
 });
 
 const path = z.object({
@@ -28,7 +28,7 @@ const path = z.object({
   station: z.string().min(1),
   walkMin,
   title: z.string().optional(),
-  maxRows: z.number().int().min(1).max(6).default(4),
+  maxRows: z.number().int().min(1).max(6).default(2),
 });
 
 const citibike = z
@@ -36,7 +36,7 @@ const citibike = z
     kind: z.literal('citibike'),
     /** Either fixed station ids, or the nearest `count` stations to the board's location. */
     ids: z.array(z.string().min(1)).optional(),
-    count: z.number().int().min(1).max(5).default(3),
+    count: z.number().int().min(1).max(5).default(2),
     title: z.string().optional(),
   })
   .refine((c) => c.ids === undefined || c.ids.length > 0, 'ids must not be empty');
@@ -70,7 +70,7 @@ export const EXAMPLE_CONFIG: BoardConfig = boardConfigSchema.parse({
     { kind: 'subway', stop: 'G29+L10', walkMin: 7, labels: { N: 'Queens', S: 'Brooklyn' } },
     { kind: 'bus', stops: ['308209'], walkMin: 3 },
     { kind: 'path', station: 'WTC', walkMin: 16 },
-    { kind: 'citibike', count: 3 },
+    { kind: 'citibike', count: 2 },
     { kind: 'alerts', subwayStops: ['L08', 'G29+L10'], busRoutes: ['B62', 'B32'] },
   ],
   quietHours: ['00:30', '06:00'],
