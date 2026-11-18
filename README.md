@@ -43,6 +43,7 @@ pnpm typecheck
 pnpm build
 pnpm gen:types    # TRANSIT_OPENAPI=../transit/public/openapi.json pnpm gen:types
 pnpm screenshots  # 1080p and 4K, light and dark, against a running demo server
+pnpm storybook    # every board component and its states, on fixed sample data (src/stories/fixtures.ts)
 ```
 
 ## Wall

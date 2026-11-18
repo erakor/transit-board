@@ -104,7 +104,7 @@ function statusLine(row: Row, d: ReturnType<typeof pickDepartures>): { text: Rea
 
 const followingOf = (d: ReturnType<typeof pickDepartures>) => d.following.map((f) => ({ min: f.leaveInMin, tentative: f.dep.assigned === false }));
 
-function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: number; now: number; compact?: boolean }) {
+export function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: number; now: number; compact?: boolean }) {
   const d = pickDepartures(row.deps, walkSec, now);
   const s = statusLine(row, d);
   return (

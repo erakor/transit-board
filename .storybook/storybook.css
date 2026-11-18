@@ -1,0 +1,16 @@
+/*
+ * The app sizes 1 rem to 1/45 of the screen height, which inside a Storybook frame would follow the
+ * frame. Pin it to the 1080p value (24 px) so components look the same as on the wall, and undo the
+ * kiosk-only rules (no scrolling, no cursor).
+ */
+html {
+  font-size: 24px;
+}
+
+html,
+body {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+  cursor: auto;
+}
