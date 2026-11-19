@@ -42,7 +42,7 @@ jobs:
 
       - name: Lint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm lint --max-warnings 0
+        run: pnpm lint --deny-warnings
 
       - name: Format
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

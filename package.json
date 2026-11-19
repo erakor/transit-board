@@ -18,10 +18,10 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:storybook": "storybook build --quiet && node scripts/storybook-smoke.mjs",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix . && prettier --write .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix && oxfmt",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "knip": "knip",
     "prepare": "husky"
   },
@@ -40,18 +40,15 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "eslint": "^10.15.0",
-    "eslint-config-next": "^16.4.6",
-    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-storybook": "10.6.7",
     "husky": "^9.1.7",
     "knip": "^6.46.1",
     "lint-staged": "^17.6.1",
     "openapi-typescript": "^7.13.0",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
     "playwright": "1.63.0",
     "postcss": "^8.5.33",
-    "prettier": "^3.10.1",
-    "prettier-plugin-tailwindcss": "^0.7.4",
     "storybook": "10.6.7",
     "tailwindcss": "^4.3.5",
     "typescript": "~5.9.3",
@@ -60,16 +57,9 @@
   },
   "lint-staged": {
     "*.{js,jsx,mjs,cjs,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "oxlint --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
     ],
-    "*.{css,json,md,mdx,yml,yaml}": "prettier --write"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "eslint": "10"
-      }
-    }
+    "*.{css,json,md,mdx,yml,yaml}": "oxfmt --no-error-on-unmatched-pattern"
   }
 }

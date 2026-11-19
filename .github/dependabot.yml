@@ -32,7 +32,6 @@ updates:
         patterns:
           - 'next'
           - '@next/*'
-          - 'eslint-config-next'
 
       react:
         patterns:
@@ -56,7 +55,13 @@ updates:
         patterns:
           - 'tailwindcss'
           - '@tailwindcss/*'
-          - 'prettier-plugin-tailwindcss'
+
+      # Linter and formatter ship together from the Oxc project.
+      oxc:
+        patterns:
+          - 'oxlint'
+          - 'oxfmt'
+          - 'oxlint-*'
 
       # Catch-alls, minor + patch only. Majors fall out as individual PRs so
       # they can be reviewed one at a time.
