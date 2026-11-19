@@ -93,7 +93,7 @@ export const ROWS = {
   },
   busWithAlert: {
     ...b62,
-    alert: { label: 'Delays', planned: false },
+    alert: { label: 'Detour', planned: false },
     deps: [at(6, 10, { stopsAway: 3 }), at(14, 10, { stopsAway: 7 })],
   },
   busAtStop: { ...b32, deps: [at(3, 10, { stopsAway: 0 }), at(9, 10, { stopsAway: 4 })] },

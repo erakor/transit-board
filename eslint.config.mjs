@@ -1,10 +1,8 @@
-import { FlatCompat } from '@eslint/eslintrc'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTs from 'eslint-config-next/typescript'
 import prettier from 'eslint-config-prettier/flat'
 import storybook from 'eslint-plugin-storybook'
-
-// eslint-config-next 15 only ships eslintrc presets; 16 exports flat configs and drops the need for this.
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname })
 
 /** Secret-looking env var names. A name that matches but is safe in the browser goes in REVIEWED_PUBLIC_ENV. */
 const SECRET_ENV_NAME = 'TOKEN|SECRET|PASSWORD|PRIVATE|CREDENTIAL|(^|_)KEY(_|$)'
@@ -31,7 +29,8 @@ const SECRETS_IN_NEXT_CONFIG_ENV = ['property.name', 'property.value'].map(prope
 }))
 
 const eslintConfig = defineConfig([
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextVitals,
+  ...nextTs,
   ...storybook.configs['flat/recommended'],
   prettier,
   {

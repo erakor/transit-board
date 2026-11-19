@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { AlertStrip } from '@/components/alert-strip'
 import { BikeCardView, TransitCardView } from '@/components/transit-card'
 import { useBoard, useBurnInShift, useServerNow, useWakeLock } from '@/components/use-board'
@@ -10,13 +10,16 @@ import { isDaytime } from '@/lib/sun'
 import { cn } from '@/lib/utils'
 import type { Board, Card } from '@/lib/types'
 
+const noSubscribe = () => () => {}
+
+function readThemeParam(): 'light' | 'dark' | null {
+  const t = new URLSearchParams(location.search).get('theme')
+  return t === 'light' || t === 'dark' ? t : null
+}
+
+/** `null` on the server and during hydration, so the first client render matches the server's. */
 function useThemeParam(): 'light' | 'dark' | null {
-  const [theme, setTheme] = useState<'light' | 'dark' | null>(null)
-  useEffect(() => {
-    const t = new URLSearchParams(location.search).get('theme')
-    setTheme(t === 'light' || t === 'dark' ? t : null)
-  }, [])
-  return theme
+  return useSyncExternalStore(noSubscribe, readThemeParam, () => null)
 }
 
 export function BoardScreen() {
@@ -28,7 +31,8 @@ export function BoardScreen() {
   useWakeLock()
 
   const isQuiet = board ? inQuietHours(board.quietHours, now) : false
-  useEffect(() => setQuiet(isQuiet), [isQuiet])
+  // Polling has to pause before `board` exists to compute this, so it lags one render behind.
+  if (quiet !== isQuiet) setQuiet(isQuiet)
 
   const theme = override ?? (board ? (isDaytime(board.sun, now) ? 'light' : 'dark') : 'dark')
   useEffect(() => {

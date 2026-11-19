@@ -9,14 +9,13 @@ const RELOAD_MS = 6 * 3_600_000
 
 /** Server time in epoch seconds, ticking every second. The offset comes from the last board's own clock. */
 export function useServerNow(board: Board | null, receivedAt: number | null): number {
-  const offset = useRef(0)
-  if (board && receivedAt !== null) offset.current = board.now * 1000 - receivedAt
+  const offset = board && receivedAt !== null ? board.now * 1000 - receivedAt : 0
   const [tick, setTick] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
-  return Math.floor((tick + offset.current) / 1000)
+  return Math.floor((tick + offset) / 1000)
 }
 
 /**
@@ -43,6 +42,8 @@ export function useBoard(paused: boolean) {
 
   useEffect(() => {
     if (paused) return
+    // load() only sets state after awaiting the fetch, so this can't cascade renders.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
     const id = setInterval(() => void load(), REFRESH_MS)
     return () => clearInterval(id)

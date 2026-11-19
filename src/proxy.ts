@@ -6,7 +6,7 @@ export const config = { matcher: ['/((?!_next/|favicon.ico|api/version).*)'] }
 const COOKIE = 'board-key'
 
 /** ?k=<key> once, then a cookie. Without DASHBOARD_KEY the board is open in development and closed in production. */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const expected = process.env.DASHBOARD_KEY
   if (!expected) {
     if (process.env.NODE_ENV !== 'production' || process.env.BOARD_DEMO) return NextResponse.next()
