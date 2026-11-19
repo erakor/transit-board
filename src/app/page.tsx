@@ -1,7 +1,7 @@
-import { BoardScreen } from '@/components/board-screen';
+import { BoardScreen } from '@/components/board-screen'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 export default function Page() {
-  return <BoardScreen />;
+  return <BoardScreen />
 }

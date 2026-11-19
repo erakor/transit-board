@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-const walkMin = z.number().min(0).max(60);
-const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM');
+const walkMin = z.number().min(0).max(60)
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM')
 
 const subway = z.object({
   kind: z.literal('subway'),
@@ -12,7 +12,7 @@ const subway = z.object({
   labels: z.object({ N: z.string().optional(), S: z.string().optional() }).default({}),
   title: z.string().optional(),
   maxRows: z.number().int().min(1).max(6).default(2),
-});
+})
 
 const bus = z.object({
   kind: z.literal('bus'),
@@ -21,7 +21,7 @@ const bus = z.object({
   walkMin,
   title: z.string().optional(),
   maxRows: z.number().int().min(1).max(6).default(3),
-});
+})
 
 const path = z.object({
   kind: z.literal('path'),
@@ -29,7 +29,7 @@ const path = z.object({
   walkMin,
   title: z.string().optional(),
   maxRows: z.number().int().min(1).max(6).default(2),
-});
+})
 
 const citibike = z
   .object({
@@ -39,16 +39,16 @@ const citibike = z
     count: z.number().int().min(1).max(5).default(2),
     title: z.string().optional(),
   })
-  .refine((c) => c.ids === undefined || c.ids.length > 0, 'ids must not be empty');
+  .refine(c => c.ids === undefined || c.ids.length > 0, 'ids must not be empty')
 
 const alerts = z.object({
   kind: z.literal('alerts'),
   subwayStops: z.array(z.string()).default([]),
   busRoutes: z.array(z.string()).default([]),
   maxAlerts: z.number().int().min(1).max(10).default(6),
-});
+})
 
-export const panelSchema = z.discriminatedUnion('kind', [subway, bus, path, citibike, alerts]);
+export const panelSchema = z.discriminatedUnion('kind', [subway, bus, path, citibike, alerts])
 
 export const boardConfigSchema = z.object({
   title: z.string().min(1),
@@ -57,10 +57,10 @@ export const boardConfigSchema = z.object({
   quietHours: z.tuple([hhmm, hhmm]).optional(),
   /** Used for sunrise and sunset, and for Citi Bike stations without fixed ids. Never sent to the browser. */
   location: z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }),
-});
+})
 
-export type BoardConfig = z.infer<typeof boardConfigSchema>;
-export type PanelConfig = z.infer<typeof panelSchema>;
+export type BoardConfig = z.infer<typeof boardConfigSchema>
+export type PanelConfig = z.infer<typeof panelSchema>
 
 /** Example values only. The real stops, walking times and location come from BOARD_CONFIG. */
 export const EXAMPLE_CONFIG: BoardConfig = boardConfigSchema.parse({
@@ -75,24 +75,27 @@ export const EXAMPLE_CONFIG: BoardConfig = boardConfigSchema.parse({
   ],
   quietHours: ['00:30', '06:00'],
   location: { lat: 40.7172, lon: -73.9569 },
-});
+})
 
 export class ConfigError extends Error {}
 
 /** BOARD_CONFIG is required in production; the example is only for development and demo mode. */
 export function loadConfig(env: Record<string, string | undefined> = process.env): BoardConfig {
-  const raw = env.BOARD_CONFIG?.trim();
+  const raw = env.BOARD_CONFIG?.trim()
   if (!raw) {
-    if (env.NODE_ENV === 'production' && !env.BOARD_DEMO) throw new ConfigError('BOARD_CONFIG is not set');
-    return EXAMPLE_CONFIG;
+    if (env.NODE_ENV === 'production' && !env.BOARD_DEMO) throw new ConfigError('BOARD_CONFIG is not set')
+    return EXAMPLE_CONFIG
   }
-  let json: unknown;
+  let json: unknown
   try {
-    json = JSON.parse(raw);
+    json = JSON.parse(raw)
   } catch {
-    throw new ConfigError('BOARD_CONFIG is not valid JSON');
+    throw new ConfigError('BOARD_CONFIG is not valid JSON')
   }
-  const parsed = boardConfigSchema.safeParse(json);
-  if (!parsed.success) throw new ConfigError(`BOARD_CONFIG is invalid: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
-  return parsed.data;
+  const parsed = boardConfigSchema.safeParse(json)
+  if (!parsed.success)
+    throw new ConfigError(
+      `BOARD_CONFIG is invalid: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`
+    )
+  return parsed.data
 }

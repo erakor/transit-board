@@ -23,13 +23,13 @@ Chromium kiosk -- GET /api/board every 20 s --> transit-board (Vercel)
 
 Environment variables (Vercel, never the repo; see `.env.example`):
 
-| Variable | |
-| --- | --- |
-| `TRANSIT_BASE_URL` | the transit deployment |
-| `TRANSIT_TOKEN` | a dedicated token (also add it to transit's comma-separated list so it can be revoked alone) |
-| `DASHBOARD_KEY` | open the board once with `?k=<key>`; a cookie keeps it. Without it the board answers 503 in production |
-| `BOARD_CONFIG` | JSON settings, shape in `src/lib/config.ts` (required in production) |
-| `BOARD_DEMO` | `1` serves generated sample data instead of calling transit |
+| Variable           |                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `TRANSIT_BASE_URL` | the transit deployment                                                                                 |
+| `TRANSIT_TOKEN`    | a dedicated token (also add it to transit's comma-separated list so it can be revoked alone)           |
+| `DASHBOARD_KEY`    | open the board once with `?k=<key>`; a cookie keeps it. Without it the board answers 503 in production |
+| `BOARD_CONFIG`     | JSON settings, shape in `src/lib/config.ts` (required in production)                                   |
+| `BOARD_DEMO`       | `1` serves generated sample data instead of calling transit                                            |
 
 `EXAMPLE_CONFIG` in `src/lib/config.ts` shows the shape with example values. Look up the real ids with transit's
 `/stops/search`, `/bus/nearby` and `/citibike/nearby`. **`G29+L10` is unchecked.**
