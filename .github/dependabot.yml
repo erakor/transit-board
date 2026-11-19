@@ -56,9 +56,10 @@ updates:
           - 'tailwindcss'
           - '@tailwindcss/*'
 
-      # Linter and formatter ship together from the Oxc project.
+      # Linter and formatter ship together from the Oxc project; the shared configs track them.
       oxc:
         patterns:
+          - '@erakor/toolchain'
           - 'oxlint'
           - 'oxfmt'
           - 'oxlint-*'

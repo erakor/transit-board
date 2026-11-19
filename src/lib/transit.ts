@@ -13,11 +13,13 @@ export type Fetcher = (path: string, params?: Record<string, string | number>) =
 
 /** A failed call to transit. Carries the status and the API's error code, never the URL or the token. */
 export class TransitError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-  ) {
+  readonly status: number
+  readonly code: string
+
+  constructor(status: number, code: string) {
     super(`transit ${status} ${code}`)
+    this.status = status
+    this.code = code
   }
 }
 
