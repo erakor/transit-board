@@ -33,7 +33,7 @@ describe('buildBoard', () => {
     expect(board.cards.filter((c) => c.status === 'ok')).toHaveLength(4);
   });
 
-  it('tags bus rows whose route has an alert', async () => {
+  it('tags bus rows whose route has an incident', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v');
     const bus = board.cards.find((c) => c.kind === 'bus') as TransitCard;
     expect(bus.rows.find((r) => r.key.startsWith('B62'))!.alert).toEqual({ label: 'Detour', planned: false });
@@ -47,6 +47,24 @@ describe('buildBoard', () => {
     expect(l!.rows.map((r) => [r.key, r.alert])).toEqual([['L-N', undefined], ['L-S', { label: 'Delays', planned: false }]]);
     // planned work at Metropolitan Av in both directions, without the "Planned - " prefix
     expect(g!.rows.map((r) => r.alert)).toEqual([{ label: 'Stops Skipped', planned: true }, { label: 'Stops Skipped', planned: true }]);
+  });
+
+  it('marks a subway card partial when its alerts call fails', async () => {
+    const flaky: Fetcher = (path, params) => (path === '/subway/alerts' && params?.stop === 'G29+L10' ? Promise.reject(new TransitError(502, 'x')) : demo(path, params));
+    const board = await buildBoard(EXAMPLE_CONFIG, flaky, NOW, 'v');
+    const [l, g] = board.cards as TransitCard[];
+    expect(g!.partial).toBe(true);
+    expect(g!.rows.every((r) => r.alert === undefined)).toBe(true);
+    expect(l!.partial).toBeUndefined();
+  });
+
+  it('tags bus rows by the alert route id, whatever the configured spelling, and skips planned work', async () => {
+    const busAlert = (planned: boolean, category: string) => ({ id: category, planned, category, priority: 15, header: '', description: '', routes: [{ id: 'B62', name: 'B62', color: '', textColor: '' }], stops: [], start: null, end: null });
+    const fetch: Fetcher = (path, params) =>
+      path === '/bus/alerts' ? Promise.resolve({ updatedAt: NOW, alerts: params?.route === 'b62' ? [busAlert(true, 'Planned - Detour'), busAlert(false, 'Delays')] : [] }) : demo(path, params);
+    const cfg = boardConfigSchema.parse({ ...EXAMPLE_CONFIG, panels: [{ kind: 'bus', stops: ['308209'], walkMin: 3 }, { kind: 'alerts', busRoutes: ['b62'] }] });
+    const bus = (await buildBoard(cfg, fetch, NOW, 'v')).cards[0] as TransitCard;
+    expect(bus.rows.find((r) => r.route === 'B62')!.alert).toEqual({ label: 'Delays', planned: false });
   });
 
   it('tags subway rows even without an alerts panel', async () => {
@@ -118,6 +136,11 @@ describe('row alerts', () => {
     expect(subwayRowAlerts(alerts, 'G', 'S', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual(['elsewhere']);
     expect(subwayRowAlerts(alerts, 'G', 'N', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual(['elsewhere', 'north']);
     expect(subwayRowAlerts(alerts, 'L', 'N', new Set(['G29', 'L10']))).toEqual([]);
+  });
+  it('gives diamond expresses their line\'s alerts', () => {
+    const six = { ...a('six', false, 26, 'Delays'), routes: [{ id: '6', name: '6', color: '', textColor: '' }] };
+    expect(subwayRowAlerts([six], '6X', 'S', new Set(['635']))).toHaveLength(1);
+    expect(subwayRowAlerts([six], 'GS', 'S', new Set(['635']))).toHaveLength(0);
   });
 });
 

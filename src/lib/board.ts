@@ -145,13 +145,16 @@ export function rowAlert(alerts: RawAlert[]): RowAlert | undefined {
   return top && { label: alertLabel(top).replace(/^Planned\s*-\s*/, ''), planned: top.planned };
 }
 
+/** Diamond expresses (`6X`, `7X`, `FX`) share their line's alerts. */
+const baseRoute = (id: string) => id.replace(/^(\w)X$/, '$1');
+
 /**
  * Subway alerts that concern one row: on its route, and in its direction when the alert names this
  * station only with the other direction's platform.
  */
 export function subwayRowAlerts(alerts: RawAlert[], route: string, direction: string | undefined, stationStops: ReadonlySet<string>): RawAlert[] {
   return alerts.filter((a) => {
-    if (!a.routes.some((r) => r.id === route)) return false;
+    if (!a.routes.some((r) => baseRoute(r.id) === baseRoute(route))) return false;
     const here = a.stops.filter((s) => stationStops.has(s.id));
     return here.length === 0 || here.some((s) => s.direction === null || s.direction === direction);
   });
@@ -191,10 +194,15 @@ export async function buildAlerts(cfg: Config<'alerts'> | undefined, subwayCardS
 function tagRows(card: TransitCard, panel: PanelConfig, alerts: Alerts) {
   if (panel.kind === 'subway') {
     const res = alerts.subway.get(panel.stop);
+    // without this station's alerts, the rows can't say whether the line is affected
+    if (!res) card.partial = true;
     const stationStops = new Set(res?.stop?.stops);
     for (const row of card.rows) row.alert = rowAlert(subwayRowAlerts(res?.alerts ?? [], row.route, row.direction, stationStops));
   } else if (panel.kind === 'bus') {
-    for (const row of card.rows) row.alert = rowAlert(alerts.bus.get(row.route)?.alerts ?? []);
+    // incidents only: planned bus work runs for weeks, often far from this stop. Matched on the
+    // alerts' own route ids, since busRoutes can spell a route several ways (`b62`, `M15-SBS`).
+    const incidents = [...alerts.bus.values()].flatMap((r) => r.alerts).filter((a) => !a.planned).sort(byImportance);
+    for (const row of card.rows) row.alert = rowAlert(incidents.filter((a) => a.routes.some((r) => r.id === row.route)));
   }
 }
 
