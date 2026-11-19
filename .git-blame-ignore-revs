@@ -1,3 +1,6 @@
 # The one-time reformat to the Prettier style ported from web. GitHub skips it in blame;
 # locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
 942bfb8c1ff55c8aa99ba9365a8be11677299f7c
+
+# The switch from Prettier to the shared oxfmt style (width 100, trailing commas, arrow parens).
+0f5a19638951765e8f105238559f0b246ae61647
