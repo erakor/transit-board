@@ -161,21 +161,16 @@ export function BikeCardView({ card, stale, className }: { card: BikeCard; stale
         <ul className="m-0 flex list-none flex-col p-0">
           {card.stations.map((s) => {
             const closed = !s.renting ? 'no rentals' : !s.returning ? 'no returns' : null;
-            const total = Math.max(s.capacity, s.bikes + s.ebikes + s.docks, 1);
             return (
-              <li key={s.id} className="flex h-[6.2rem] flex-col justify-center gap-1 border-t border-border first:border-t-0">
+              <li key={s.id} className="flex h-[6.2rem] flex-col justify-center gap-1.5 border-t border-border first:border-t-0">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="truncate text-[1.25rem] font-medium">{s.name}</span>
                   {closed && <span className="shrink-0 text-[1rem] font-medium text-bad">{closed}</span>}
                 </div>
-                <div className="flex items-end justify-between">
+                <div className="grid grid-cols-3 items-end">
                   <Stat label="Classic" value={s.bikes} dim={!s.renting} />
-                  <Stat label="E-Bikes" value={s.ebikes} dim={!s.renting} color="text-sky-500" />
-                  <Stat label="Free Docks" value={s.docks} dim={!s.returning} color="text-ok" align="right" />
-                </div>
-                <div className="flex h-[0.4rem] overflow-hidden rounded-full bg-border" aria-hidden>
-                  <div className="bg-foreground" style={{ width: `${(s.bikes / total) * 100}%` }} />
-                  <div className="bg-sky-500" style={{ width: `${(s.ebikes / total) * 100}%` }} />
+                  <Stat label="E-Bike" icon={<Bolt />} value={s.ebikes} dim={!s.renting} color="text-sky-500" />
+                  <Stat label="Docks" value={s.docks} dim={!s.returning} color="text-ok" align="right" />
                 </div>
               </li>
             );
@@ -186,11 +181,22 @@ export function BikeCardView({ card, stale, className }: { card: BikeCard; stale
   );
 }
 
-function Stat({ label, value, dim, color, align }: { label: string; value: number; dim: boolean; color?: string; align?: 'right' }) {
+function Bolt() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[0.95rem] w-[0.95rem]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+    </svg>
+  );
+}
+
+function Stat({ label, icon, value, dim, color, align }: { label: string; icon?: React.ReactNode; value: number; dim: boolean; color?: string; align?: 'right' }) {
   return (
     <div className={cn('tnum leading-none', align === 'right' && 'text-right', dim && 'line-through opacity-40')}>
-      <div className="text-[1rem] text-muted-foreground">{label}</div>
-      <div className={cn('mt-0.5 text-[2.2rem] font-bold', color)}>{value}</div>
+      <div className={cn('flex h-[1rem] items-center gap-1 text-[0.9rem] font-medium uppercase tracking-wider', align === 'right' && 'justify-end', icon ? color : 'text-muted-foreground')}>
+        {icon}
+        {label}
+      </div>
+      <div className={cn('mt-1 text-[2.2rem] font-bold', color)}>{value}</div>
     </div>
   );
 }
