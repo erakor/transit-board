@@ -3,7 +3,7 @@ import { RouteBullet, RouteChip } from '@/components/bullet';
 import { clock } from '@/lib/time';
 import { pickDepartures } from '@/lib/leave';
 import { cn } from '@/lib/utils';
-import type { BikeCard, Row, TransitCard } from '@/lib/types';
+import type { BikeCard, Row, RowAlert, TransitCard } from '@/lib/types';
 
 const TAG: Record<string, string> = { subway: 'Subway', path: 'PATH' };
 
@@ -15,6 +15,18 @@ function Walk({ min }: { min: number }) {
         <path d="M9 21l2.5-6-2-3 1.5-4 3 3 3 1M11.5 15l3 2 .5 4M10 8l-3 3" />
       </svg>
       {min} min walk
+    </span>
+  );
+}
+
+/** Next to a row's label: amber for incidents (delays, suspensions), muted for planned work. */
+function AlertTag({ alert }: { alert: RowAlert }) {
+  return (
+    <span className={cn('inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium', alert.planned ? 'text-muted-foreground' : 'text-warn')}>
+      <svg viewBox="0 0 24 24" className="h-[1.05rem] w-[1.05rem]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" />
+      </svg>
+      {alert.label}
     </span>
   );
 }
@@ -104,7 +116,8 @@ function statusLine(row: Row, d: ReturnType<typeof pickDepartures>): { text: Rea
 
 const followingOf = (d: ReturnType<typeof pickDepartures>) => d.following.map((f) => ({ min: f.leaveInMin, tentative: f.dep.assigned === false }));
 
-function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: number; now: number; compact?: boolean }) {
+/** `alertBelow` puts the alert tag on the second line, for narrow cards where it would crowd the label. */
+function DepartureRow({ row, walkSec, now, compact, alertBelow }: { row: Row; walkSec: number; now: number; compact?: boolean; alertBelow?: boolean }) {
   const d = pickDepartures(row.deps, walkSec, now);
   const s = statusLine(row, d);
   return (
@@ -113,9 +126,14 @@ function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: numbe
       <div className="min-w-0 flex-1 leading-tight">
         <div className="flex items-center gap-2">
           <span className="truncate text-[1.25rem] font-medium">{row.label}</span>
-          {row.warn && <span className="shrink-0 text-warn" aria-label="alert">⚠</span>}
+          {row.alert && !alertBelow && <AlertTag alert={row.alert} />}
         </div>
-        {!compact && <div className={cn('truncate text-[1rem]', s.warn ? 'text-warn' : 'text-muted-foreground')}>{s.text}</div>}
+        {!compact && (
+          <div className="flex min-w-0 items-center gap-2 text-[1rem]">
+            {row.alert && alertBelow && <AlertTag alert={row.alert} />}
+            <span className={cn('truncate', s.warn ? 'text-warn' : 'text-muted-foreground')}>{s.text}</span>
+          </div>
+        )}
       </div>
       <Following values={followingOf(d)} />
       <BigNumber d={d} compact={compact} />
@@ -142,7 +160,7 @@ export function TransitCardView({ card, now, stale, className }: { card: Transit
           ) : (
             <ul className="m-0 flex list-none flex-col p-0">
               {card.rows.map((r) => (
-                <DepartureRow key={r.key} row={r} walkSec={walk} now={now} compact={card.kind === 'path'} />
+                <DepartureRow key={r.key} row={r} walkSec={walk} now={now} compact={card.kind === 'path'} alertBelow={card.kind === 'bus'} />
               ))}
             </ul>
           )}

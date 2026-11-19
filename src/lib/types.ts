@@ -13,13 +13,21 @@ export type Dep = {
   stopsAway?: number | null;
 };
 
+/** A short tag next to a row's label: the MTA's status ("Delays", "Part Suspended"), without "Planned - ". */
+export type RowAlert = { label: string; planned: boolean };
+
 export type Row = {
   key: string;
+  /** Route id, to match alerts against. */
+  route: string;
+  /** Subway platform direction (`N` or `S`). */
+  direction?: string;
   bullet: Bullet | null;
   label: string;
   /** Direction name ("Manhattan"), when the settings have one. */
   sub?: string;
-  warn?: boolean;
+  /** The most serious alert in effect on the row's route (and direction, when the alert names one). */
+  alert?: RowAlert;
   deps: Dep[];
 };
 

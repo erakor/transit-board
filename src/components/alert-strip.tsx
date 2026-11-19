@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { RouteBullet } from '@/components/bullet';
+import { alertLabel } from '@/lib/text';
 import type { AlertItem, Bullet } from '@/lib/types';
 
 const ROTATE_MS = 10_000;
@@ -38,7 +39,7 @@ export function AlertStrip({ items, error }: { items: AlertItem[]; error: boolea
     <section className="flex h-[3.6rem] items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-4" aria-live="polite">
       {alert ? (
         <>
-          <span className={`shrink-0 rounded-full border px-3 py-0.5 text-[1rem] font-medium ${alert.planned ? 'border-border text-muted-foreground' : 'border-warn text-warn'}`}>{alert.category ?? (alert.planned ? 'Planned' : 'Alert')}</span>
+          <span className={`shrink-0 rounded-full border px-3 py-0.5 text-[1rem] font-medium ${alert.planned ? 'border-border text-muted-foreground' : 'border-warn text-warn'}`}>{alertLabel(alert)}</span>
           <p className="m-0 line-clamp-2 min-w-0 flex-1 text-[1.15rem] leading-tight">
             <AlertText alert={alert} />
           </p>
