@@ -6,7 +6,7 @@ import type { Dep } from './types'
  * still catch; trains you can't reach are not counted. Cancelled trains and trains with no
  * predicted time can't be caught either.
  */
-export type Catchable = { dep: Dep; leaveBy: number; leaveInMin: number }
+type Catchable = { dep: Dep; leaveBy: number; leaveInMin: number }
 
 export type Departures = {
   /** First catchable train: the big number. */
@@ -21,7 +21,7 @@ export type Departures = {
   atTerminal: Dep | null
 }
 
-export function leaveInMinutes(time: number, walkSec: number, now: number): number {
+function leaveInMinutes(time: number, walkSec: number, now: number): number {
   return Math.floor((time - walkSec - now) / 60)
 }
 

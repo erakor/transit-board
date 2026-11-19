@@ -48,7 +48,7 @@ const alerts = z.object({
   maxAlerts: z.number().int().min(1).max(10).default(6),
 })
 
-export const panelSchema = z.discriminatedUnion('kind', [subway, bus, path, citibike, alerts])
+const panelSchema = z.discriminatedUnion('kind', [subway, bus, path, citibike, alerts])
 
 export const boardConfigSchema = z.object({
   title: z.string().min(1),
@@ -77,7 +77,7 @@ export const EXAMPLE_CONFIG: BoardConfig = boardConfigSchema.parse({
   location: { lat: 40.7172, lon: -73.9569 },
 })
 
-export class ConfigError extends Error {}
+class ConfigError extends Error {}
 
 /** BOARD_CONFIG is required in production; the example is only for development and demo mode. */
 export function loadConfig(env: Record<string, string | undefined> = process.env): BoardConfig {

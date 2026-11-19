@@ -1,5 +1,5 @@
-export const AMBER_AFTER_S = 60
-export const GREY_AFTER_S = 180
+const AMBER_AFTER_S = 60
+const GREY_AFTER_S = 180
 
 export type Freshness = 'fresh' | 'amber' | 'stale'
 

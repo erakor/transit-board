@@ -5,11 +5,11 @@ import { demoFetcher } from './demo'
 import { transitFetcher, type Fetcher } from './transit'
 import type { Board } from './types'
 
-export function currentVersion(): string {
+function currentVersion(): string {
   return process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VERCEL_DEPLOYMENT_ID ?? 'dev'
 }
 
-export function makeFetcher(
+function makeFetcher(
   env: Record<string, string | undefined> = process.env,
   now: () => number = () => Math.floor(Date.now() / 1000)
 ): Fetcher {

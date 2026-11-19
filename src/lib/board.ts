@@ -11,7 +11,7 @@ import type {
   SubwayAlertsResponse,
   SubwayArrivals,
 } from './transit'
-import type { AlertItem, BikeCard, Board, Bullet, Card, Dep, Row, RowAlert, Station, TransitCard } from './types'
+import type { AlertItem, BikeCard, Board, Bullet, Card, Row, RowAlert, Station, TransitCard } from './types'
 
 type Config<K extends PanelConfig['kind']> = Extract<PanelConfig, { kind: K }>
 
@@ -26,7 +26,7 @@ const bullet = (r: { name: string; color: string; textColor: string }): Bullet =
 })
 const round4 = (n: number) => Math.round(n * 1e4) / 1e4
 
-export async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, index: number): Promise<TransitCard> {
+async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, index: number): Promise<TransitCard> {
   const res = cast<SubwayArrivals>(await fetch('/subway/arrivals', { stop: cfg.stop, limit: MAX_DEPS }))
   const rows: Row[] = res.groups.map(g => ({
     key: `${g.route}-${g.direction}`,
@@ -49,7 +49,7 @@ export async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, ind
   }
 }
 
-export async function buildPathCard(cfg: Config<'path'>, fetch: Fetcher, index: number): Promise<TransitCard> {
+async function buildPathCard(cfg: Config<'path'>, fetch: Fetcher, index: number): Promise<TransitCard> {
   const res = cast<PathArrivals>(await fetch('/path/arrivals', { station: cfg.station, limit: MAX_DEPS }))
   const rows: Row[] = res.groups.map(g => ({
     key: `${g.route}-${g.direction}`,
@@ -100,7 +100,7 @@ export function groupBuses(arrivals: BusArrival[]): Row[] {
   return [...rows.values()]
 }
 
-export async function buildBusCard(cfg: Config<'bus'>, fetch: Fetcher, index: number): Promise<TransitCard> {
+async function buildBusCard(cfg: Config<'bus'>, fetch: Fetcher, index: number): Promise<TransitCard> {
   const results = await Promise.allSettled(cfg.stops.map(stop => fetch('/bus/arrivals', { stop, limit: 12 })))
   const ok = results.flatMap(r => (r.status === 'fulfilled' ? [cast<BusArrivals>(r.value)] : []))
   if (ok.length === 0) throw (results[0] as PromiseRejectedResult).reason
@@ -135,7 +135,7 @@ const station = (s: RawStation | StationResponse['station']): Station => ({
   returning: s.returning,
 })
 
-export async function buildBikeCard(
+async function buildBikeCard(
   cfg: Config<'citibike'>,
   fetch: Fetcher,
   index: number,
@@ -221,7 +221,7 @@ async function settledMap<T>(keys: string[], call: (key: string) => Promise<unkn
   return new Map(results.flatMap((r, i) => (r.status === 'fulfilled' ? [[keys[i]!, cast<T>(r.value)] as const] : [])))
 }
 
-export async function buildAlerts(
+async function buildAlerts(
   cfg: Config<'alerts'> | undefined,
   subwayCardStops: string[],
   fetch: Fetcher
@@ -328,5 +328,3 @@ export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: numbe
     version,
   }
 }
-
-export type { Dep }

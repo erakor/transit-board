@@ -48,6 +48,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm format:check
 
+      - name: Unused files, exports and dependencies
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm knip
+
       - name: Unit tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test

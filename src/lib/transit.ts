@@ -46,5 +46,3 @@ export function transitFetcher(baseUrl: string, token: string, fetchImpl: typeof
     return res.json()
   }
 }
-
-export const asResponse = <T>(value: unknown): T => value as T

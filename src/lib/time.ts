@@ -1,4 +1,4 @@
-export const TIME_ZONE = 'America/New_York'
+const TIME_ZONE = 'America/New_York'
 
 /** Minutes after local midnight in New York, and the local date as YYYY-MM-DD. */
 export function localParts(epochSeconds: number): { minutes: number; date: string } {
