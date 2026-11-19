@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { buildBoard, groupBuses, mergeAlerts } from '@/lib/board';
 import { EXAMPLE_CONFIG, boardConfigSchema, loadConfig } from '@/lib/config';
-import { demoFetcher } from '@/lib/demo';
+import { DEMO_NOW, demoFetcher, failingFetcher } from '@/lib/demo';
 import { TransitError, transitFetcher, type Fetcher } from '@/lib/transit';
 import { checkKey } from '@/lib/auth';
 import type { BikeCard, TransitCard } from '@/lib/types';
 
-const NOW = Date.UTC(2026, 5, 21, 16) / 1000;
+const NOW = DEMO_NOW;
 const demo = demoFetcher(() => NOW);
 
 describe('buildBoard', () => {
@@ -26,7 +26,7 @@ describe('buildBoard', () => {
   });
 
   it('keeps the rest of the screen when one panel fails', async () => {
-    const flaky: Fetcher = (path, params) => (path === '/path/arrivals' ? Promise.reject(new TransitError(502, 'upstream_unavailable')) : demo(path, params));
+    const flaky = failingFetcher(demo, (path) => path === '/path/arrivals');
     const board = await buildBoard(EXAMPLE_CONFIG, flaky, NOW, 'v');
     const path = board.cards.find((c) => c.kind === 'path')!;
     expect(path.status).toBe('error');
@@ -47,7 +47,7 @@ describe('buildBoard', () => {
   });
 
   it('reports alerts as an error only when every call failed', async () => {
-    const down: Fetcher = (path, params) => (path.endsWith('/alerts') ? Promise.reject(new TransitError(502, 'x')) : demo(path, params));
+    const down = failingFetcher(demo, (path) => path.endsWith('/alerts'));
     const board = await buildBoard(EXAMPLE_CONFIG, down, NOW, 'v');
     expect(board.alerts.status).toBe('error');
     expect(board.cards).toHaveLength(5);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertStrip } from '@/components/alert-strip';
 import { BikeCardView, TransitCardView } from '@/components/transit-card';
 import { useBoard, useBurnInShift, useServerNow, useWakeLock } from '@/components/use-board';
@@ -8,6 +8,7 @@ import { ageText, freshness } from '@/lib/freshness';
 import { clockParts, inQuietHours, longDate } from '@/lib/time';
 import { isDaytime } from '@/lib/sun';
 import { cn } from '@/lib/utils';
+import type { Board, Card } from '@/lib/types';
 
 function useThemeParam(): 'light' | 'dark' | null {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
@@ -34,19 +35,21 @@ export function BoardScreen() {
     document.documentElement.dataset.theme = isQuiet ? 'dark' : theme;
   }, [theme, isQuiet]);
 
-  // time since the last good board, as the server's clock sees it
-  const boardAge = board ? now - board.now : 0;
-  const state = freshness(boardAge);
-  const cards = useMemo(() => board?.cards ?? [], [board]);
-
   if (isQuiet) return <div className="fixed inset-0 bg-black" aria-hidden />;
   if (!board) return <div className="flex h-full items-center justify-center text-[1.4rem] text-muted-foreground">Loading…</div>;
+  return <BoardView board={board} now={now} shift={shift} />;
+}
 
+/** The board itself, drawn from a board and the server time. No fetching, timers or theme handling. */
+export function BoardView({ board, now, shift = { x: 0, y: 0 } }: { board: Board; now: number; shift?: { x: number; y: number } }) {
+  // time since the last good board, as the server's clock sees it
+  const boardAge = now - board.now;
+  const state = freshness(boardAge);
   const time = clockParts(now);
   // as in the mockup: subway and PATH on the wide left, buses and Citi Bike on the right
-  const left = cards.filter((c) => c.kind === 'subway' || c.kind === 'path');
-  const right = cards.filter((c) => c.kind === 'bus' || c.kind === 'citibike');
-  const render = (card: (typeof cards)[number]) => {
+  const left = board.cards.filter((c) => c.kind === 'subway' || c.kind === 'path');
+  const right = board.cards.filter((c) => c.kind === 'bus' || c.kind === 'citibike');
+  const render = (card: Card) => {
     const age = now - (card.updatedAt ?? board.now);
     const stale = state === 'stale' || freshness(age) === 'stale';
     const fit = card.kind === 'path' ? 'flex-none' : 'flex-1';

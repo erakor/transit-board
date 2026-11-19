@@ -43,6 +43,8 @@ pnpm typecheck
 pnpm build
 pnpm gen:types    # TRANSIT_OPENAPI=../transit/public/openapi.json pnpm gen:types
 pnpm screenshots  # 1080p and 4K, light and dark, against a running demo server
+pnpm storybook    # every board component and its states, on the demo data (src/stories)
+pnpm test:storybook  # build Storybook and check every story renders without errors
 ```
 
 ## Wall
