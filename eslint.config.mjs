@@ -34,6 +34,11 @@ const eslintConfig = defineConfig([
   ...storybook.configs['flat/recommended'],
   prettier,
   {
+    // eslint-plugin-react's version detection calls context.getFilename(), which ESLint 10 removed. Drop this once
+    // eslint-plugin-react supports ESLint 10.
+    settings: { react: { version: '19' } },
+  },
+  {
     // Destructuring a prop only to keep it out of `...rest` (or a `_`-prefixed arg) is deliberate.
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { ignoreRestSiblings: true, argsIgnorePattern: '^_' }],
