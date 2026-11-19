@@ -116,7 +116,8 @@ function statusLine(row: Row, d: ReturnType<typeof pickDepartures>): { text: Rea
 
 const followingOf = (d: ReturnType<typeof pickDepartures>) => d.following.map((f) => ({ min: f.leaveInMin, tentative: f.dep.assigned === false }));
 
-function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: number; now: number; compact?: boolean }) {
+/** `alertBelow` puts the alert tag on the second line, for narrow cards where it would crowd the label. */
+function DepartureRow({ row, walkSec, now, compact, alertBelow }: { row: Row; walkSec: number; now: number; compact?: boolean; alertBelow?: boolean }) {
   const d = pickDepartures(row.deps, walkSec, now);
   const s = statusLine(row, d);
   return (
@@ -125,9 +126,14 @@ function DepartureRow({ row, walkSec, now, compact }: { row: Row; walkSec: numbe
       <div className="min-w-0 flex-1 leading-tight">
         <div className="flex items-center gap-2">
           <span className="truncate text-[1.25rem] font-medium">{row.label}</span>
-          {row.alert && <AlertTag alert={row.alert} />}
+          {row.alert && !alertBelow && <AlertTag alert={row.alert} />}
         </div>
-        {!compact && <div className={cn('truncate text-[1rem]', s.warn ? 'text-warn' : 'text-muted-foreground')}>{s.text}</div>}
+        {!compact && (
+          <div className="flex min-w-0 items-center gap-2 text-[1rem]">
+            {row.alert && alertBelow && <AlertTag alert={row.alert} />}
+            <span className={cn('truncate', s.warn ? 'text-warn' : 'text-muted-foreground')}>{s.text}</span>
+          </div>
+        )}
       </div>
       <Following values={followingOf(d)} />
       <BigNumber d={d} compact={compact} />
@@ -154,7 +160,7 @@ export function TransitCardView({ card, now, stale, className }: { card: Transit
           ) : (
             <ul className="m-0 flex list-none flex-col p-0">
               {card.rows.map((r) => (
-                <DepartureRow key={r.key} row={r} walkSec={walk} now={now} compact={card.kind === 'path'} />
+                <DepartureRow key={r.key} row={r} walkSec={walk} now={now} compact={card.kind === 'path'} alertBelow={card.kind === 'bus'} />
               ))}
             </ul>
           )}
