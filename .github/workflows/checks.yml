@@ -20,7 +20,7 @@ jobs:
   # Pinned to a toolchain commit; Renovate/Dependabot bump it with the package in package.json.
   checks:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: erakor/toolchain/.github/workflows/node-checks.yml@7b648f778dfc2e4f0753ef20bb5a0a9484f9377a
+    uses: erakor/toolchain/.github/workflows/node-checks.yml@a43487e76663bd84ede121057887848f69e6016d # v1.4.0
 
   storybook:
     runs-on: ubuntu-latest
