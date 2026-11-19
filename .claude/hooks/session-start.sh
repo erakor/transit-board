@@ -20,13 +20,15 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -q '^export BOARD_DEMO=' "$CLAUDE_ENV
   } >> "$CLAUDE_ENV_FILE"
 fi
 
-# The container's default Node is older than .nvmrc. nvm's install is a no-op once the
-# version is there; its PATH goes to the env file so Claude's own shell uses it too.
-if [ -s "${NVM_DIR:-/opt/nvm}/nvm.sh" ]; then
+# The container's default Node is older than .nvmrc. Its PATH goes to the env file so
+# Claude's own shell uses it too. Non-fatal: if nodejs.org is unreachable, the install
+# below still runs on the default Node rather than leaving the session with nothing.
+use_nvmrc_node() {
+  [ -s "${NVM_DIR:-/opt/nvm}/nvm.sh" ] || return 0
   export NVM_DIR="${NVM_DIR:-/opt/nvm}"
   # shellcheck disable=SC1091
   . "$NVM_DIR/nvm.sh" > /dev/null
-  nvm use --silent > /dev/null 2>&1 || nvm install > /dev/null
+  nvm use --silent > /dev/null 2>&1 || nvm install > /dev/null || return 1
   NODE_BIN="$(dirname "$(nvm which current)")"
   export PATH="$NODE_BIN:$PATH"
   if [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -qF "$NODE_BIN" "$CLAUDE_ENV_FILE" 2>/dev/null; then
@@ -34,7 +36,8 @@ if [ -s "${NVM_DIR:-/opt/nvm}/nvm.sh" ]; then
   fi
   # pnpm's shim is per Node install; corepack provides the version packageManager pins.
   command -v pnpm > /dev/null || corepack enable > /dev/null
-fi
+}
+use_nvmrc_node || echo "session-start: could not switch to the .nvmrc Node; using $(node -v)" >&2
 
 # Unlike a setup script, this hook gets no environment-cache snapshot (it runs on
 # every start and resume), so skip the install when the lockfile already matches
