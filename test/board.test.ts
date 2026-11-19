@@ -107,16 +107,17 @@ describe('row alerts', () => {
   const a = (id: string, planned: boolean, priority: number | null, category: string | null, stops: Array<{ id: string; direction: 'N' | 'S' | null }> = []) => ({
     id, planned, priority, category, header: id, description: '', routes: [{ id: 'G', name: 'G', color: '', textColor: '' }], stops: stops.map((s) => ({ ...s, name: s.id })), start: 0, end: null,
   });
-  it('picks incidents over planned work, then the most serious', () => {
-    expect(rowAlert([a('p', true, 30, 'Planned - Suspended'), a('d', false, 26, 'Delays'), a('s', false, 33, 'Part Suspended')])).toEqual({ label: 'Part Suspended', planned: false });
-    expect(rowAlert([a('f', true, null, null)])).toEqual({ label: 'Planned work', planned: true });
+  it('labels the first alert, as the API orders them', () => {
+    expect(rowAlert([a('s', false, 33, 'Part Suspended'), a('d', false, 26, 'Delays')])).toEqual({ label: 'Part Suspended', planned: false });
+    expect(rowAlert([a('p', true, 12, 'Planned - Stops Skipped')])).toEqual({ label: 'Stops Skipped', planned: true });
+    expect(rowAlert([a('f', true, null, null)])).toEqual({ label: 'Planned', planned: true });
     expect(rowAlert([])).toBeUndefined();
   });
   it('keeps alerts for other stations and drops the other direction here', () => {
     const alerts = [a('elsewhere', false, 26, 'Delays', [{ id: 'G22', direction: 'S' }]), a('north', false, 26, 'Delays', [{ id: 'G29', direction: 'N' }])];
-    expect(subwayRowAlerts(alerts, 'G', 'S', ['G29', 'L10']).map((x) => x.id)).toEqual(['elsewhere']);
-    expect(subwayRowAlerts(alerts, 'G', 'N', ['G29', 'L10']).map((x) => x.id)).toEqual(['elsewhere', 'north']);
-    expect(subwayRowAlerts(alerts, 'L', 'N', ['G29', 'L10'])).toEqual([]);
+    expect(subwayRowAlerts(alerts, 'G', 'S', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual(['elsewhere']);
+    expect(subwayRowAlerts(alerts, 'G', 'N', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual(['elsewhere', 'north']);
+    expect(subwayRowAlerts(alerts, 'L', 'N', new Set(['G29', 'L10']))).toEqual([]);
   });
 });
 

@@ -20,3 +20,6 @@ export function titleCase(text: string): string {
     .join('')
     .trim();
 }
+
+/** What an alert is called on screen: the MTA's status, or a generic name when the feed has none. */
+export const alertLabel = (a: { category: string | null; planned: boolean }) => a.category ?? (a.planned ? 'Planned' : 'Alert');

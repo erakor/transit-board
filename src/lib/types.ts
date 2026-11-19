@@ -18,6 +18,10 @@ export type RowAlert = { label: string; planned: boolean };
 
 export type Row = {
   key: string;
+  /** Route id, to match alerts against. */
+  route: string;
+  /** Subway platform direction (`N` or `S`). */
+  direction?: string;
   bullet: Bullet | null;
   label: string;
   /** Direction name ("Manhattan"), when the settings have one. */

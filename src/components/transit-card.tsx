@@ -22,7 +22,7 @@ function Walk({ min }: { min: number }) {
 /** Next to a row's label: amber for incidents (delays, suspensions), muted for planned work. */
 function AlertTag({ alert }: { alert: RowAlert }) {
   return (
-    <span className={cn('inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium', alert.planned ? 'text-muted-foreground' : 'text-warn')} data-alert={alert.planned ? 'planned' : 'incident'}>
+    <span className={cn('inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium', alert.planned ? 'text-muted-foreground' : 'text-warn')}>
       <svg viewBox="0 0 24 24" className="h-[1.05rem] w-[1.05rem]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01" />
       </svg>

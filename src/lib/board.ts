@@ -1,6 +1,6 @@
 import type { BoardConfig, PanelConfig } from './config';
 import { sunTimes } from './sun';
-import { titleCase } from './text';
+import { alertLabel, titleCase } from './text';
 import type { AlertsResponse, BusArrivals, Fetcher, NearbyStations, PathArrivals, StationResponse, SubwayAlertsResponse, SubwayArrivals } from './transit';
 import type { AlertItem, BikeCard, Board, Bullet, Card, Dep, Row, RowAlert, Station, TransitCard } from './types';
 
@@ -17,6 +17,8 @@ export async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, ind
   const res = cast<SubwayArrivals>(await fetch('/subway/arrivals', { stop: cfg.stop, limit: MAX_DEPS }));
   const rows: Row[] = res.groups.map((g) => ({
     key: `${g.route}-${g.direction}`,
+    route: g.route,
+    direction: g.direction,
     bullet: bullet(g),
     label: g.headsign,
     sub: cfg.labels[g.direction],
@@ -38,6 +40,7 @@ export async function buildPathCard(cfg: Config<'path'>, fetch: Fetcher, index: 
   const res = cast<PathArrivals>(await fetch('/path/arrivals', { station: cfg.station, limit: MAX_DEPS }));
   const rows: Row[] = res.groups.map((g) => ({
     key: `${g.route}-${g.direction}`,
+    route: g.route,
     // the route id ("NWK-WTC") is the chip: the route name is too long for it
     bullet: bullet({ ...g, name: g.route }),
     label: g.headsign,
@@ -65,7 +68,7 @@ export function groupBuses(arrivals: BusArrival[]): Row[] {
     const key = `${a.route}|${label}`;
     let row = rows.get(key);
     if (!row) {
-      row = { key, bullet: bullet({ name: a.name, color: a.color, textColor: a.textColor }), label, deps: [] };
+      row = { key, route: a.route, bullet: bullet({ name: a.name, color: a.color, textColor: a.textColor }), label, deps: [] };
       rows.set(key, row);
     }
     row.deps.push({ time: a.time, stopsAway: a.stopsAway, atTerminal: a.atTerminal || undefined, cancelled: a.cancelled || undefined });
@@ -136,22 +139,20 @@ export function mergeAlerts(responses: AlertsResponse[], max: number): AlertItem
     .map((a) => ({ id: a.id, header: a.header, category: a.category, planned: a.planned, routes: a.routes.map(bullet) }));
 }
 
-/** The tag for the most serious of these alerts: the MTA's status, without its "Planned - " prefix. */
+/** The tag for the first alert (the API lists the most serious first), without "Planned - ". */
 export function rowAlert(alerts: RawAlert[]): RowAlert | undefined {
-  const top = [...alerts].sort(byImportance)[0];
-  if (!top) return undefined;
-  const label = (top.category ?? (top.planned ? 'Planned work' : 'Alert')).replace(/^Planned\s*-\s*/, '');
-  return { label, planned: top.planned };
+  const top = alerts[0];
+  return top && { label: alertLabel(top).replace(/^Planned\s*-\s*/, ''), planned: top.planned };
 }
 
 /**
  * Subway alerts that concern one row: on its route, and in its direction when the alert names this
  * station only with the other direction's platform.
  */
-export function subwayRowAlerts(alerts: RawAlert[], route: string, direction: string, stationStops: string[]): RawAlert[] {
+export function subwayRowAlerts(alerts: RawAlert[], route: string, direction: string | undefined, stationStops: ReadonlySet<string>): RawAlert[] {
   return alerts.filter((a) => {
     if (!a.routes.some((r) => r.id === route)) return false;
-    const here = a.stops.filter((s) => stationStops.includes(s.id));
+    const here = a.stops.filter((s) => stationStops.has(s.id));
     return here.length === 0 || here.some((s) => s.direction === null || s.direction === direction);
   });
 }
@@ -164,22 +165,22 @@ type Alerts = {
   bus: Map<string, AlertsResponse>;
 };
 
+/** Calls `call` for each key in parallel and keeps the answers that came back, by key. */
+async function settledMap<T>(keys: string[], call: (key: string) => Promise<unknown>): Promise<Map<string, T>> {
+  const results = await Promise.allSettled(keys.map(call));
+  return new Map(results.flatMap((r, i) => (r.status === 'fulfilled' ? [[keys[i]!, cast<T>(r.value)] as const] : [])));
+}
+
 export async function buildAlerts(cfg: Config<'alerts'> | undefined, subwayCardStops: string[], fetch: Fetcher): Promise<Alerts> {
   const panelStops = cfg?.subwayStops ?? [];
   const busRoutes = cfg?.busRoutes ?? [];
-  const subwayStops = [...new Set([...panelStops, ...subwayCardStops])];
-  const [subwayRes, busRes] = await Promise.all([
-    Promise.allSettled(subwayStops.map((stop) => fetch('/subway/alerts', { stop }))),
-    Promise.allSettled(busRoutes.map((route) => fetch('/bus/alerts', { route }))),
+  const [subway, bus] = await Promise.all([
+    settledMap<SubwayAlertsResponse>([...new Set([...panelStops, ...subwayCardStops])], (stop) => fetch('/subway/alerts', { stop })),
+    settledMap<AlertsResponse>(busRoutes, (route) => fetch('/bus/alerts', { route })),
   ]);
-  const subway = new Map<string, SubwayAlertsResponse>();
-  subwayRes.forEach((r, i) => r.status === 'fulfilled' && subway.set(subwayStops[i]!, cast<SubwayAlertsResponse>(r.value)));
-  const bus = new Map<string, AlertsResponse>();
-  busRes.forEach((r, i) => r.status === 'fulfilled' && bus.set(busRoutes[i]!, cast<AlertsResponse>(r.value)));
   const strip = [...panelStops.flatMap((s) => subway.get(s) ?? []), ...bus.values()];
-  const calls = panelStops.length + busRoutes.length;
   return {
-    status: calls > 0 && strip.length === 0 ? 'error' : 'ok',
+    status: panelStops.length + busRoutes.length > 0 && strip.length === 0 ? 'error' : 'ok',
     items: cfg ? mergeAlerts(strip, cfg.maxAlerts) : [],
     subway,
     bus,
@@ -187,17 +188,13 @@ export async function buildAlerts(cfg: Config<'alerts'> | undefined, subwayCardS
 }
 
 /** Tags each row with the most serious alert on its route, from the answers buildAlerts got. */
-function tagRows(card: Card, panel: PanelConfig, alerts: Alerts) {
-  if (card.kind === 'subway' && panel.kind === 'subway') {
+function tagRows(card: TransitCard, panel: PanelConfig, alerts: Alerts) {
+  if (panel.kind === 'subway') {
     const res = alerts.subway.get(panel.stop);
-    if (!res) return;
-    const stationStops = res.stop?.stops ?? panel.stop.split('+');
-    for (const row of card.rows) {
-      const cut = row.key.lastIndexOf('-');
-      row.alert = rowAlert(subwayRowAlerts(res.alerts, row.key.slice(0, cut), row.key.slice(cut + 1), stationStops));
-    }
-  } else if (card.kind === 'bus') {
-    for (const row of card.rows) row.alert = rowAlert(alerts.bus.get(row.key.split('|')[0]!)?.alerts ?? []);
+    const stationStops = new Set(res?.stop?.stops);
+    for (const row of card.rows) row.alert = rowAlert(subwayRowAlerts(res?.alerts ?? [], row.route, row.direction, stationStops));
+  } else if (panel.kind === 'bus') {
+    for (const row of card.rows) row.alert = rowAlert(alerts.bus.get(row.route)?.alerts ?? []);
   }
 }
 
@@ -234,7 +231,7 @@ export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: numbe
     const panel = config.panels[i]!;
     if (panel.kind === 'alerts') return;
     const card = r.status === 'fulfilled' && r.value ? r.value : failed(panel, i);
-    if (card.status === 'ok') tagRows(card, panel, alerts);
+    if (card.status === 'ok' && card.kind !== 'citibike') tagRows(card, panel, alerts);
     cards.push(card);
   });
   return {
