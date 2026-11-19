@@ -15,7 +15,7 @@ export type Fetcher = (path: string, params?: Record<string, string | number>) =
 export class TransitError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string
+    readonly code: string,
   ) {
     super(`transit ${status} ${code}`)
   }
@@ -24,7 +24,11 @@ export class TransitError extends Error {
 const TIMEOUT_MS = 8000
 
 /** The server-side client. The token stays here: it must never reach the browser. */
-export function transitFetcher(baseUrl: string, token: string, fetchImpl: typeof fetch = fetch): Fetcher {
+export function transitFetcher(
+  baseUrl: string,
+  token: string,
+  fetchImpl: typeof fetch = fetch,
+): Fetcher {
   const base = baseUrl.replace(/\/+$/, '')
   return async (path, params = {}) => {
     const url = new URL(base + path)

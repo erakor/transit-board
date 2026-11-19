@@ -15,7 +15,7 @@ describe('leave-in rule', () => {
   it('skips trains you cannot reach and does not count them', () => {
     const d = pickDepartures([at(2), at(3), at(9), at(15)], walk, NOW)
     expect(d.primary?.leaveInMin).toBe(5)
-    expect(d.following.map(f => f.leaveInMin)).toEqual([11])
+    expect(d.following.map((f) => f.leaveInMin)).toEqual([11])
     expect(d.tooLate).toBeNull()
   })
 
@@ -44,7 +44,9 @@ describe('leave-in rule', () => {
 
   it('shows a bus at its terminal only when there is nothing to catch', () => {
     expect(pickDepartures([{ time: null, atTerminal: true }], walk, NOW).atTerminal).not.toBeNull()
-    expect(pickDepartures([at(10), { time: null, atTerminal: true }], walk, NOW).atTerminal).toBeNull()
+    expect(
+      pickDepartures([at(10), { time: null, atTerminal: true }], walk, NOW).atTerminal,
+    ).toBeNull()
   })
 
   it('ticks down as the clock moves', () => {

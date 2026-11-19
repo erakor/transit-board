@@ -35,7 +35,7 @@ function titleWord(word: string): string {
 export function titleCase(text: string): string {
   return text
     .split(/(\s+|\/|-)/)
-    .map(part => (/^(\s+|\/|-)$/.test(part) ? part : titleWord(part)))
+    .map((part) => (/^(\s+|\/|-)$/.test(part) ? part : titleWord(part)))
     .join('')
     .trim()
 }

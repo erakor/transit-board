@@ -6,7 +6,9 @@ export const DEMO_NOW = Date.UTC(2026, 5, 21, 16) / 1000
 /** `fetch`, with the calls `fails` matches rejected the way an upstream outage would. */
 export function failingFetcher(fetch: Fetcher, fails: (path: string) => boolean): Fetcher {
   return (path, params) =>
-    fails(path) ? Promise.reject(new TransitError(502, 'upstream_unavailable')) : fetch(path, params)
+    fails(path)
+      ? Promise.reject(new TransitError(502, 'upstream_unavailable'))
+      : fetch(path, params)
 }
 
 const L = { color: '#7C858C', textColor: '#FFFFFF' }
@@ -99,7 +101,13 @@ export function demoFetcher(now: () => number): Fetcher {
         throw new TransitError(404, 'unknown_stop')
       }
       case '/bus/arrivals': {
-        const bus = (name: string, color: string, headsign: string, min: number | null, extra: object = {}) => ({
+        const bus = (
+          name: string,
+          color: string,
+          headsign: string,
+          min: number | null,
+          extra: object = {},
+        ) => ({
           time: min === null ? null : t(min, 10),
           route: name,
           name,

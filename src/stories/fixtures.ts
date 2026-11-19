@@ -28,7 +28,14 @@ export const BULLETS = {
   HOB: { name: 'HOB-WTC', color: '#4D92FB', textColor: '#FFFFFF' },
 } satisfies Record<string, Bullet>
 
-const manhattan = { key: 'L-N', route: 'L', direction: 'N', bullet: BULLETS.L, label: '8 Av', sub: 'Manhattan' }
+const manhattan = {
+  key: 'L-N',
+  route: 'L',
+  direction: 'N',
+  bullet: BULLETS.L,
+  label: '8 Av',
+  sub: 'Manhattan',
+}
 const b62 = {
   key: 'B62|Downtown Bklyn via Long Island City',
   route: 'B62',

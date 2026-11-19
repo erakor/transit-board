@@ -39,7 +39,7 @@ const citibike = z
     count: z.number().int().min(1).max(5).default(2),
     title: z.string().optional(),
   })
-  .refine(c => c.ids === undefined || c.ids.length > 0, 'ids must not be empty')
+  .refine((c) => c.ids === undefined || c.ids.length > 0, 'ids must not be empty')
 
 const alerts = z.object({
   kind: z.literal('alerts'),
@@ -83,7 +83,8 @@ class ConfigError extends Error {}
 export function loadConfig(env: Record<string, string | undefined> = process.env): BoardConfig {
   const raw = env.BOARD_CONFIG?.trim()
   if (!raw) {
-    if (env.NODE_ENV === 'production' && !env.BOARD_DEMO) throw new ConfigError('BOARD_CONFIG is not set')
+    if (env.NODE_ENV === 'production' && !env.BOARD_DEMO)
+      throw new ConfigError('BOARD_CONFIG is not set')
     return EXAMPLE_CONFIG
   }
   let json: unknown
@@ -95,7 +96,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const parsed = boardConfigSchema.safeParse(json)
   if (!parsed.success)
     throw new ConfigError(
-      `BOARD_CONFIG is invalid: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`
+      `BOARD_CONFIG is invalid: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
     )
   return parsed.data
 }

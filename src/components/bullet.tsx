@@ -17,7 +17,7 @@ export function RouteBullet({ route, size = 'md' }: { route: BulletData; size?: 
 export function RouteChip({ route }: { route: BulletData }) {
   return (
     <span
-      className='inline-flex h-[1.9rem] shrink-0 items-center justify-center rounded-md px-[0.6rem] text-[1.05rem] leading-none font-bold'
+      className="inline-flex h-[1.9rem] shrink-0 items-center justify-center rounded-md px-[0.6rem] text-[1.05rem] leading-none font-bold"
       style={{ backgroundColor: route.color, color: route.textColor }}
     >
       {route.name}

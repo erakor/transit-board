@@ -78,7 +78,9 @@ export function useWakeLock() {
       try {
         lock =
           (await (
-            navigator as unknown as { wakeLock?: { request(t: 'screen'): Promise<{ release(): Promise<void> }> } }
+            navigator as unknown as {
+              wakeLock?: { request(t: 'screen'): Promise<{ release(): Promise<void> }> }
+            }
           ).wakeLock?.request('screen')) ?? null
       } catch {
         /* denied */

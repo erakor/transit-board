@@ -12,8 +12,14 @@ const demo = demoFetcher(() => NOW)
 describe('buildBoard', () => {
   it('builds every card from the sample answers', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v1')
-    expect(board.cards.map(c => c.id)).toEqual(['subway-0', 'subway-1', 'bus-2', 'path-3', 'citibike-4'])
-    expect(board.cards.every(c => c.status === 'ok')).toBe(true)
+    expect(board.cards.map((c) => c.id)).toEqual([
+      'subway-0',
+      'subway-1',
+      'bus-2',
+      'path-3',
+      'citibike-4',
+    ])
+    expect(board.cards.every((c) => c.status === 'ok')).toBe(true)
     expect(board.sun).not.toBeNull()
     expect(board.version).toBe('v1')
   })
@@ -21,7 +27,7 @@ describe('buildBoard', () => {
   it('puts the configured direction names next to the headsigns', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v')
     const l = board.cards[0] as TransitCard
-    expect(l.rows.map(r => [r.label, r.sub])).toEqual([
+    expect(l.rows.map((r) => [r.label, r.sub])).toEqual([
       ['8 Av', 'Manhattan'],
       ['Canarsie-Rockaway Pkwy', 'Brooklyn'],
     ])
@@ -29,30 +35,33 @@ describe('buildBoard', () => {
   })
 
   it('keeps the rest of the screen when one panel fails', async () => {
-    const flaky = failingFetcher(demo, path => path === '/path/arrivals')
+    const flaky = failingFetcher(demo, (path) => path === '/path/arrivals')
     const board = await buildBoard(EXAMPLE_CONFIG, flaky, NOW, 'v')
-    const path = board.cards.find(c => c.kind === 'path')!
+    const path = board.cards.find((c) => c.kind === 'path')!
     expect(path.status).toBe('error')
-    expect(board.cards.filter(c => c.status === 'ok')).toHaveLength(4)
+    expect(board.cards.filter((c) => c.status === 'ok')).toHaveLength(4)
   })
 
   it('tags bus rows whose route has an incident', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v')
-    const bus = board.cards.find(c => c.kind === 'bus') as TransitCard
-    expect(bus.rows.find(r => r.key.startsWith('B62'))!.alert).toEqual({ label: 'Detour', planned: false })
-    expect(bus.rows.find(r => r.key.startsWith('B32'))!.alert).toBeUndefined()
+    const bus = board.cards.find((c) => c.kind === 'bus') as TransitCard
+    expect(bus.rows.find((r) => r.key.startsWith('B62'))!.alert).toEqual({
+      label: 'Detour',
+      planned: false,
+    })
+    expect(bus.rows.find((r) => r.key.startsWith('B32'))!.alert).toBeUndefined()
   })
 
   it('tags subway rows on the route and direction an alert names', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v')
     const [l, g] = board.cards as TransitCard[]
     // Brooklyn-bound delays at Bedford Av: the southbound row only
-    expect(l!.rows.map(r => [r.key, r.alert])).toEqual([
+    expect(l!.rows.map((r) => [r.key, r.alert])).toEqual([
       ['L-N', undefined],
       ['L-S', { label: 'Delays', planned: false }],
     ])
     // planned work at Metropolitan Av in both directions, without the "Planned - " prefix
-    expect(g!.rows.map(r => r.alert)).toEqual([
+    expect(g!.rows.map((r) => r.alert)).toEqual([
       { label: 'Stops Skipped', planned: true },
       { label: 'Stops Skipped', planned: true },
     ])
@@ -66,7 +75,7 @@ describe('buildBoard', () => {
     const board = await buildBoard(EXAMPLE_CONFIG, flaky, NOW, 'v')
     const [l, g] = board.cards as TransitCard[]
     expect(g!.partial).toBe(true)
-    expect(g!.rows.every(r => r.alert === undefined)).toBe(true)
+    expect(g!.rows.every((r) => r.alert === undefined)).toBe(true)
     expect(l!.partial).toBeUndefined()
   })
 
@@ -87,7 +96,10 @@ describe('buildBoard', () => {
       path === '/bus/alerts'
         ? Promise.resolve({
             updatedAt: NOW,
-            alerts: params?.route === 'b62' ? [busAlert(true, 'Planned - Detour'), busAlert(false, 'Delays')] : [],
+            alerts:
+              params?.route === 'b62'
+                ? [busAlert(true, 'Planned - Detour'), busAlert(false, 'Delays')]
+                : [],
           })
         : demo(path, params)
     const cfg = boardConfigSchema.parse({
@@ -98,11 +110,17 @@ describe('buildBoard', () => {
       ],
     })
     const bus = (await buildBoard(cfg, fetch, NOW, 'v')).cards[0] as TransitCard
-    expect(bus.rows.find(r => r.route === 'B62')!.alert).toEqual({ label: 'Delays', planned: false })
+    expect(bus.rows.find((r) => r.route === 'B62')!.alert).toEqual({
+      label: 'Delays',
+      planned: false,
+    })
   })
 
   it('tags subway rows even without an alerts panel', async () => {
-    const cfg = boardConfigSchema.parse({ ...EXAMPLE_CONFIG, panels: [{ kind: 'subway', stop: 'L08', walkMin: 4 }] })
+    const cfg = boardConfigSchema.parse({
+      ...EXAMPLE_CONFIG,
+      panels: [{ kind: 'subway', stop: 'L08', walkMin: 4 }],
+    })
     const board = await buildBoard(cfg, demo, NOW, 'v')
     expect((board.cards[0] as TransitCard).rows[1]!.alert?.label).toBe('Delays')
     expect(board.alerts).toEqual({ status: 'ok', items: [] })
@@ -118,17 +136,20 @@ describe('buildBoard', () => {
   })
 
   it('reports alerts as an error only when every call failed', async () => {
-    const down = failingFetcher(demo, path => path.endsWith('/alerts'))
+    const down = failingFetcher(demo, (path) => path.endsWith('/alerts'))
     const board = await buildBoard(EXAMPLE_CONFIG, down, NOW, 'v')
     expect(board.alerts.status).toBe('error')
     expect(board.cards).toHaveLength(5)
   })
 
   it('reads Citi Bike closures', async () => {
-    const three = boardConfigSchema.parse({ ...EXAMPLE_CONFIG, panels: [{ kind: 'citibike', count: 3 }] })
+    const three = boardConfigSchema.parse({
+      ...EXAMPLE_CONFIG,
+      panels: [{ kind: 'citibike', count: 3 }],
+    })
     const board = await buildBoard(three, demo, NOW, 'v')
-    const bikes = board.cards.find(c => c.kind === 'citibike') as BikeCard
-    expect(bikes.stations.map(s => [s.renting, s.returning])).toEqual([
+    const bikes = board.cards.find((c) => c.kind === 'citibike') as BikeCard
+    expect(bikes.stations.map((s) => [s.renting, s.returning])).toEqual([
       [true, true],
       [true, false],
       [false, true],
@@ -139,18 +160,26 @@ describe('buildBoard', () => {
     const calls: Array<[string, Record<string, string | number> | undefined]> = []
     const spy: Fetcher = (p, params) => (calls.push([p, params]), demo(p, params))
     await buildBoard(EXAMPLE_CONFIG, spy, NOW, 'v')
-    expect(calls.find(([p]) => p === '/citibike/nearby')![1]).toMatchObject({ lat: 40.7172, lon: -73.9569 })
+    expect(calls.find(([p]) => p === '/citibike/nearby')![1]).toMatchObject({
+      lat: 40.7172,
+      lon: -73.9569,
+    })
   })
 })
 
 describe('groupBuses', () => {
   it('groups the flat list by route and title-cased headsign', async () => {
-    const res = (await demo('/bus/arrivals', { stop: '308209' })) as { arrivals: Parameters<typeof groupBuses>[0] }
+    const res = (await demo('/bus/arrivals', { stop: '308209' })) as {
+      arrivals: Parameters<typeof groupBuses>[0]
+    }
     const rows = groupBuses(res.arrivals)
-    expect(rows.map(r => r.label)).toEqual(['Downtown Bklyn via Long Island City', 'Long Island City via Roebling St'])
+    expect(rows.map((r) => r.label)).toEqual([
+      'Downtown Bklyn via Long Island City',
+      'Long Island City via Roebling St',
+    ])
     expect(rows[0]!.deps).toHaveLength(3)
     expect(rows[0]!.deps.at(-1)).toMatchObject({ time: null, atTerminal: true })
-    expect(rows[1]!.deps.some(d => d.cancelled)).toBe(true)
+    expect(rows[1]!.deps.some((d) => d.cancelled)).toBe(true)
   })
 })
 
@@ -173,9 +202,9 @@ describe('mergeAlerts', () => {
         { updatedAt: 0, alerts: [a('p', true, 30), a('i1', false, 10)] },
         { updatedAt: 0, alerts: [a('i1', false, 10), a('i2', false, 20)] },
       ],
-      5
+      5,
     )
-    expect(merged.map(m => m.id)).toEqual(['i2', 'i1', 'p'])
+    expect(merged.map((m) => m.id)).toEqual(['i2', 'i1', 'p'])
   })
 })
 
@@ -185,7 +214,7 @@ describe('row alerts', () => {
     planned: boolean,
     priority: number | null,
     category: string | null,
-    stops: Array<{ id: string; direction: 'N' | 'S' | null }> = []
+    stops: Array<{ id: string; direction: 'N' | 'S' | null }> = [],
   ) => ({
     id,
     planned,
@@ -194,7 +223,7 @@ describe('row alerts', () => {
     header: id,
     description: '',
     routes: [{ id: 'G', name: 'G', color: '', textColor: '' }],
-    stops: stops.map(s => ({ ...s, name: s.id })),
+    stops: stops.map((s) => ({ ...s, name: s.id })),
     start: 0,
     end: null,
   })
@@ -203,7 +232,10 @@ describe('row alerts', () => {
       label: 'Part Suspended',
       planned: false,
     })
-    expect(rowAlert([a('p', true, 12, 'Planned - Stops Skipped')])).toEqual({ label: 'Stops Skipped', planned: true })
+    expect(rowAlert([a('p', true, 12, 'Planned - Stops Skipped')])).toEqual({
+      label: 'Stops Skipped',
+      planned: true,
+    })
     expect(rowAlert([a('f', true, null, null)])).toEqual({ label: 'Planned', planned: true })
     expect(rowAlert([])).toBeUndefined()
   })
@@ -212,12 +244,20 @@ describe('row alerts', () => {
       a('elsewhere', false, 26, 'Delays', [{ id: 'G22', direction: 'S' }]),
       a('north', false, 26, 'Delays', [{ id: 'G29', direction: 'N' }]),
     ]
-    expect(subwayRowAlerts(alerts, 'G', 'S', new Set(['G29', 'L10'])).map(x => x.id)).toEqual(['elsewhere'])
-    expect(subwayRowAlerts(alerts, 'G', 'N', new Set(['G29', 'L10'])).map(x => x.id)).toEqual(['elsewhere', 'north'])
+    expect(subwayRowAlerts(alerts, 'G', 'S', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual([
+      'elsewhere',
+    ])
+    expect(subwayRowAlerts(alerts, 'G', 'N', new Set(['G29', 'L10'])).map((x) => x.id)).toEqual([
+      'elsewhere',
+      'north',
+    ])
     expect(subwayRowAlerts(alerts, 'L', 'N', new Set(['G29', 'L10']))).toEqual([])
   })
   it("gives diamond expresses their line's alerts", () => {
-    const six = { ...a('six', false, 26, 'Delays'), routes: [{ id: '6', name: '6', color: '', textColor: '' }] }
+    const six = {
+      ...a('six', false, 26, 'Delays'),
+      routes: [{ id: '6', name: '6', color: '', textColor: '' }],
+    }
     expect(subwayRowAlerts([six], '6X', 'S', new Set(['635']))).toHaveLength(1)
     expect(subwayRowAlerts([six], 'GS', 'S', new Set(['635']))).toHaveLength(0)
   })
@@ -252,8 +292,15 @@ describe('transit client', () => {
   })
   it('turns failures into errors that carry no URL or token', async () => {
     const fake = (async () =>
-      Response.json({ error: 'x', code: 'upstream_unavailable' }, { status: 502 })) as unknown as typeof fetch
-    const err = await transitFetcher('https://t.example', 'secret', fake)('/x').catch((e: unknown) => e)
+      Response.json(
+        { error: 'x', code: 'upstream_unavailable' },
+        { status: 502 },
+      )) as unknown as typeof fetch
+    const err = await transitFetcher(
+      'https://t.example',
+      'secret',
+      fake,
+    )('/x').catch((e: unknown) => e)
     expect(err).toBeInstanceOf(TransitError)
     expect(String(err)).not.toMatch(/secret|t\.example/)
     expect((err as TransitError).code).toBe('upstream_unavailable')
@@ -261,7 +308,9 @@ describe('transit client', () => {
       throw new Error('boom secret')
     }) as unknown as typeof fetch
     expect(
-      String(await transitFetcher('https://t.example', 'secret', offline)('/x').catch((e: unknown) => e))
+      String(
+        await transitFetcher('https://t.example', 'secret', offline)('/x').catch((e: unknown) => e),
+      ),
     ).not.toMatch(/secret/)
   })
 })
@@ -279,7 +328,7 @@ describe('checkKey', () => {
 describe('bus card', () => {
   it('names the stop when there is exactly one', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v')
-    const bus = board.cards.find(c => c.kind === 'bus') as TransitCard
+    const bus = board.cards.find((c) => c.kind === 'bus') as TransitCard
     expect(bus.stop).toEqual({ name: 'Berry St/N 8 St', code: '308209' })
   })
 })
@@ -287,8 +336,8 @@ describe('bus card', () => {
 describe('PATH rows', () => {
   it('are chips named by route id, labelled with the headsign', async () => {
     const board = await buildBoard(EXAMPLE_CONFIG, demo, NOW, 'v')
-    const path = board.cards.find(c => c.kind === 'path') as TransitCard
-    expect(path.rows.map(r => [r.bullet?.name, r.label])).toEqual([
+    const path = board.cards.find((c) => c.kind === 'path') as TransitCard
+    expect(path.rows.map((r) => [r.bullet?.name, r.label])).toEqual([
       ['NWK-WTC', 'Newark'],
       ['HOB-WTC', 'Hoboken'],
     ])
