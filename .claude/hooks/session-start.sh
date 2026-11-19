@@ -20,6 +20,22 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -q '^export BOARD_DEMO=' "$CLAUDE_ENV
   } >> "$CLAUDE_ENV_FILE"
 fi
 
+# The container's default Node is older than .nvmrc. nvm's install is a no-op once the
+# version is there; its PATH goes to the env file so Claude's own shell uses it too.
+if [ -s "${NVM_DIR:-/opt/nvm}/nvm.sh" ]; then
+  export NVM_DIR="${NVM_DIR:-/opt/nvm}"
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh" > /dev/null
+  nvm use --silent > /dev/null 2>&1 || nvm install > /dev/null
+  NODE_BIN="$(dirname "$(nvm which current)")"
+  export PATH="$NODE_BIN:$PATH"
+  if [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -qF "$NODE_BIN" "$CLAUDE_ENV_FILE" 2>/dev/null; then
+    echo "export PATH=\"$NODE_BIN:\$PATH\"" >> "$CLAUDE_ENV_FILE"
+  fi
+  # pnpm's shim is per Node install; corepack provides the version packageManager pins.
+  command -v pnpm > /dev/null || corepack enable > /dev/null
+fi
+
 # Unlike a setup script, this hook gets no environment-cache snapshot (it runs on
 # every start and resume), so skip the install when the lockfile already matches
 # what produced this node_modules. The stamp lives inside node_modules, so wiping
