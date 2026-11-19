@@ -56,6 +56,11 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test
 
-      - name: Storybook smoke test
+      - name: Install Chromium for the Storybook smoke test
+        id: chromium
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Storybook smoke test
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         run: pnpm test:storybook
