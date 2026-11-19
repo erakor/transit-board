@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { titleCase } from '@/lib/text';
+import { describe, expect, it } from 'vitest'
+import { titleCase } from '@/lib/text'
 
 describe('titleCase', () => {
   it.each([
@@ -9,5 +9,5 @@ describe('titleCase', () => {
     ['E 42ND ST - GRAND CENTRAL', 'E 42nd St - Grand Central'],
     ['JFK AIRPORT', 'JFK Airport'],
     ['Already Fine', 'Already Fine'],
-  ])('%s', (input, expected) => expect(titleCase(input)).toBe(expected));
-});
+  ])('%s', (input, expected) => expect(titleCase(input)).toBe(expected))
+})

@@ -1,4 +1,4 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'next'
 
 const config: NextConfig = {
   poweredByHeader: false,
@@ -12,6 +12,6 @@ const config: NextConfig = {
       ],
     },
   ],
-};
+}
 
-export default config;
+export default config
