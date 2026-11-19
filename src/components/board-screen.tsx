@@ -39,9 +39,13 @@ export function BoardScreen() {
     document.documentElement.dataset.theme = isQuiet ? 'dark' : theme
   }, [theme, isQuiet])
 
-  if (isQuiet) return <div className='fixed inset-0 bg-black' aria-hidden />
+  if (isQuiet) return <div className="fixed inset-0 bg-black" aria-hidden />
   if (!board)
-    return <div className='flex h-full items-center justify-center text-[1.4rem] text-muted-foreground'>Loading…</div>
+    return (
+      <div className="flex h-full items-center justify-center text-[1.4rem] text-muted-foreground">
+        Loading…
+      </div>
+    )
   return <BoardView board={board} now={now} shift={shift} />
 }
 
@@ -60,8 +64,8 @@ export function BoardView({
   const state = freshness(boardAge)
   const time = clockParts(now)
   // as in the mockup: subway and PATH on the wide left, buses and Citi Bike on the right
-  const left = board.cards.filter(c => c.kind === 'subway' || c.kind === 'path')
-  const right = board.cards.filter(c => c.kind === 'bus' || c.kind === 'citibike')
+  const left = board.cards.filter((c) => c.kind === 'subway' || c.kind === 'path')
+  const right = board.cards.filter((c) => c.kind === 'bus' || c.kind === 'citibike')
   const render = (card: Card) => {
     const age = now - (card.updatedAt ?? board.now)
     const stale = state === 'stale' || freshness(age) === 'stale'
@@ -74,38 +78,42 @@ export function BoardView({
   }
   return (
     <main
-      className='flex h-full flex-col gap-[0.6rem] p-[0.8rem]'
+      className="flex h-full flex-col gap-[0.6rem] p-[0.8rem]"
       style={{ transform: `translate(${shift.x}px, ${shift.y}px)` }}
     >
-      <header className='flex h-[3.4rem] shrink-0 items-center justify-between px-2'>
-        <div className='min-w-0'>
-          <h1 className='m-0 truncate text-[1.5rem] leading-none font-semibold'>{board.title}</h1>
-          <div className='mt-1 text-[1.15rem] text-muted-foreground'>{longDate(now)}</div>
+      <header className="flex h-[3.4rem] shrink-0 items-center justify-between px-2">
+        <div className="min-w-0">
+          <h1 className="m-0 truncate text-[1.5rem] leading-none font-semibold">{board.title}</h1>
+          <div className="mt-1 text-[1.15rem] text-muted-foreground">{longDate(now)}</div>
         </div>
-        <div className='flex items-center gap-6'>
+        <div className="flex items-center gap-6">
           <span
             className={cn(
               'text-[1rem]',
               state === 'fresh' && 'text-muted-foreground',
               state === 'amber' && 'font-medium text-warn',
-              state === 'stale' && 'font-medium text-bad'
+              state === 'stale' && 'font-medium text-bad',
             )}
             data-freshness={state}
           >
             {state === 'stale' ? `data is stale · ${ageText(boardAge)}` : ageText(boardAge)}
           </span>
-          <span className='tnum flex items-baseline text-[3.4rem] leading-none font-bold'>
+          <span className="tnum flex items-baseline text-[3.4rem] leading-none font-bold">
             {time.hm}
-            <span className='ml-2 text-[1.6rem] font-normal text-muted-foreground'>:{time.ss}</span>
+            <span className="ml-2 text-[1.6rem] font-normal text-muted-foreground">:{time.ss}</span>
           </span>
         </div>
       </header>
-      <div className='flex min-h-0 flex-1 gap-[0.6rem]'>
+      <div className="flex min-h-0 flex-1 gap-[0.6rem]">
         {left.length > 0 && (
-          <div className='flex min-h-0 min-w-0 flex-[1.75] flex-col gap-[0.6rem]'>{left.map(render)}</div>
+          <div className="flex min-h-0 min-w-0 flex-[1.75] flex-col gap-[0.6rem]">
+            {left.map(render)}
+          </div>
         )}
         {right.length > 0 && (
-          <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-[0.6rem]'>{right.map(render)}</div>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-[0.6rem]">
+            {right.map(render)}
+          </div>
         )}
       </div>
       <AlertStrip items={board.alerts.items} error={board.alerts.status === 'error'} />

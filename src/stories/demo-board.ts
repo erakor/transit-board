@@ -13,14 +13,15 @@ const build = (fails: (path: string) => boolean = () => false) =>
 
 export const [BOARD, BOARD_PATH_DOWN, BOARD_ALERTS_DOWN] = await Promise.all([
   build(),
-  build(path => path === '/path/arrivals'),
-  build(path => path.endsWith('/alerts')),
+  build((path) => path === '/path/arrivals'),
+  build((path) => path.endsWith('/alerts')),
 ])
 
 /** The nth card of a kind, by position among cards of that kind, so it doesn't depend on panel order. */
 function cardOf<K extends Card['kind']>(kind: K, nth = 0): Extract<Card, { kind: K }> {
-  const card = BOARD.cards.filter(c => c.kind === kind)[nth]
-  if (!card) throw new Error(`EXAMPLE_CONFIG has no ${kind} panel #${nth + 1}; the stories need one`)
+  const card = BOARD.cards.filter((c) => c.kind === kind)[nth]
+  if (!card)
+    throw new Error(`EXAMPLE_CONFIG has no ${kind} panel #${nth + 1}; the stories need one`)
   return card as Extract<Card, { kind: K }>
 }
 

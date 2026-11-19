@@ -11,9 +11,12 @@ export function localParts(epochSeconds: number): { minutes: number; date: strin
     hour: '2-digit',
     minute: '2-digit',
   }).formatToParts(new Date(epochSeconds * 1000))
-  const get = (type: string) => parts.find(p => p.type === type)!.value
+  const get = (type: string) => parts.find((p) => p.type === type)!.value
   const hour = Number(get('hour')) % 24
-  return { minutes: hour * 60 + Number(get('minute')), date: `${get('year')}-${get('month')}-${get('day')}` }
+  return {
+    minutes: hour * 60 + Number(get('minute')),
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+  }
 }
 
 export function clock(epochSeconds: number): string {

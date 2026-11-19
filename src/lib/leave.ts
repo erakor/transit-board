@@ -25,7 +25,12 @@ function leaveInMinutes(time: number, walkSec: number, now: number): number {
   return Math.floor((time - walkSec - now) / 60)
 }
 
-export function pickDepartures(deps: Dep[], walkSec: number, now: number, maxFollowing = 3): Departures {
+export function pickDepartures(
+  deps: Dep[],
+  walkSec: number,
+  now: number,
+  maxFollowing = 3,
+): Departures {
   const catchable: Catchable[] = []
   let tooLate: Dep | null = null
   let cancelled: Dep | null = null
@@ -40,7 +45,8 @@ export function pickDepartures(deps: Dep[], walkSec: number, now: number, maxFol
       continue
     }
     const leaveBy = dep.time - walkSec
-    if (leaveBy >= now) catchable.push({ dep, leaveBy, leaveInMin: leaveInMinutes(dep.time, walkSec, now) })
+    if (leaveBy >= now)
+      catchable.push({ dep, leaveBy, leaveInMin: leaveInMinutes(dep.time, walkSec, now) })
     else if (dep.time > now) tooLate ??= dep
   }
   catchable.sort((a, b) => a.leaveBy - b.leaveBy)

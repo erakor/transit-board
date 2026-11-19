@@ -25,22 +25,22 @@ export const ThreeLetters: Story = { args: { route: BULLETS.SIR } }
 
 /** The rectangular chip for buses and PATH, whose names are too long for a bullet. */
 export const Chip: StoryObj<typeof RouteChip> = {
-  render: args => <RouteChip {...args} />,
+  render: (args) => <RouteChip {...args} />,
   args: { route: BULLETS.B62 },
 }
 
 export const AllRoutes: Story = {
   render: () => (
-    <div className='flex flex-col gap-4'>
-      {(['md', 'sm'] as const).map(size => (
-        <div key={size} className='flex items-center gap-3'>
-          {[BULLETS.L, BULLETS.G, BULLETS.A, BULLETS.N].map(r => (
+    <div className="flex flex-col gap-4">
+      {(['md', 'sm'] as const).map((size) => (
+        <div key={size} className="flex items-center gap-3">
+          {[BULLETS.L, BULLETS.G, BULLETS.A, BULLETS.N].map((r) => (
             <RouteBullet key={r.name} route={r} size={size} />
           ))}
         </div>
       ))}
-      <div className='flex items-center gap-3'>
-        {[BULLETS.B62, BULLETS.B32, BULLETS.NWK, BULLETS.HOB].map(r => (
+      <div className="flex items-center gap-3">
+        {[BULLETS.B62, BULLETS.B32, BULLETS.NWK, BULLETS.HOB].map((r) => (
           <RouteChip key={r.name} route={r} />
         ))}
       </div>

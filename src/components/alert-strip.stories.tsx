@@ -2,13 +2,13 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { AlertStrip, AlertText } from '@/components/alert-strip'
 import { ALERTS } from '@/stories/demo-board'
 
-const planned = ALERTS.find(a => a.planned)!
+const planned = ALERTS.find((a) => a.planned)!
 
 const meta = {
   title: 'Board/Alert strip',
   component: AlertStrip,
   args: { items: ALERTS, error: false },
-  decorators: [Story => <div className='w-[78rem]'>{Story()}</div>],
+  decorators: [(Story) => <div className="w-[78rem]">{Story()}</div>],
 } satisfies Meta<typeof AlertStrip>
 
 export default meta
@@ -34,7 +34,8 @@ export const UnknownRoute: Story = {
         id: 'x',
         planned: false,
         category: 'Delays',
-        header: '[F] and [M] trains are delayed after a train with mechanical problems at 47-50 Sts.',
+        header:
+          '[F] and [M] trains are delayed after a train with mechanical problems at 47-50 Sts.',
         routes: [],
       },
     ],
@@ -60,8 +61,8 @@ export const AlertsUnavailable: Story = { args: { items: [], error: true } }
 
 /** Just the alert text, with routes turned into bullets. */
 export const Text: StoryObj<typeof AlertText> = {
-  render: args => (
-    <p className='m-0 text-[1.15rem] leading-tight'>
+  render: (args) => (
+    <p className="m-0 text-[1.15rem] leading-tight">
       <AlertText {...args} />
     </p>
   ),

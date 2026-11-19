@@ -10,7 +10,10 @@ export function proxy(req: NextRequest) {
   const expected = process.env.DASHBOARD_KEY
   if (!expected) {
     if (process.env.NODE_ENV !== 'production' || process.env.BOARD_DEMO) return NextResponse.next()
-    return new NextResponse('Not configured', { status: 503, headers: { 'Cache-Control': 'no-store' } })
+    return new NextResponse('Not configured', {
+      status: 503,
+      headers: { 'Cache-Control': 'no-store' },
+    })
   }
   const fromQuery = req.nextUrl.searchParams.get('k')
   if (checkKey(fromQuery, expected)) {

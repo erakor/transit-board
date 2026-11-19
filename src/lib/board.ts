@@ -11,7 +11,17 @@ import type {
   SubwayAlertsResponse,
   SubwayArrivals,
 } from './transit'
-import type { AlertItem, BikeCard, Board, Bullet, Card, Row, RowAlert, Station, TransitCard } from './types'
+import type {
+  AlertItem,
+  BikeCard,
+  Board,
+  Bullet,
+  Card,
+  Row,
+  RowAlert,
+  Station,
+  TransitCard,
+} from './types'
 
 type Config<K extends PanelConfig['kind']> = Extract<PanelConfig, { kind: K }>
 
@@ -26,16 +36,27 @@ const bullet = (r: { name: string; color: string; textColor: string }): Bullet =
 })
 const round4 = (n: number) => Math.round(n * 1e4) / 1e4
 
-async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, index: number): Promise<TransitCard> {
-  const res = cast<SubwayArrivals>(await fetch('/subway/arrivals', { stop: cfg.stop, limit: MAX_DEPS }))
-  const rows: Row[] = res.groups.map(g => ({
+async function buildSubwayCard(
+  cfg: Config<'subway'>,
+  fetch: Fetcher,
+  index: number,
+): Promise<TransitCard> {
+  const res = cast<SubwayArrivals>(
+    await fetch('/subway/arrivals', { stop: cfg.stop, limit: MAX_DEPS }),
+  )
+  const rows: Row[] = res.groups.map((g) => ({
     key: `${g.route}-${g.direction}`,
     route: g.route,
     direction: g.direction,
     bullet: bullet(g),
     label: g.headsign,
     sub: cfg.labels[g.direction],
-    deps: g.arrivals.map(a => ({ time: a.time, assigned: a.assigned, stalled: a.stalled, delayed: a.delayed })),
+    deps: g.arrivals.map((a) => ({
+      time: a.time,
+      assigned: a.assigned,
+      stalled: a.stalled,
+      delayed: a.delayed,
+    })),
   }))
   return {
     id: `subway-${index}`,
@@ -49,16 +70,22 @@ async function buildSubwayCard(cfg: Config<'subway'>, fetch: Fetcher, index: num
   }
 }
 
-async function buildPathCard(cfg: Config<'path'>, fetch: Fetcher, index: number): Promise<TransitCard> {
-  const res = cast<PathArrivals>(await fetch('/path/arrivals', { station: cfg.station, limit: MAX_DEPS }))
-  const rows: Row[] = res.groups.map(g => ({
+async function buildPathCard(
+  cfg: Config<'path'>,
+  fetch: Fetcher,
+  index: number,
+): Promise<TransitCard> {
+  const res = cast<PathArrivals>(
+    await fetch('/path/arrivals', { station: cfg.station, limit: MAX_DEPS }),
+  )
+  const rows: Row[] = res.groups.map((g) => ({
     key: `${g.route}-${g.direction}`,
     route: g.route,
     // the route id ("NWK-WTC") is the chip: the route name is too long for it
     bullet: bullet({ ...g, name: g.route }),
     label: g.headsign,
     sub: g.direction === 'NY' ? 'To New York' : 'To New Jersey',
-    deps: g.arrivals.map(a => ({ time: a.time })),
+    deps: g.arrivals.map((a) => ({ time: a.time })),
   }))
   return {
     id: `path-${index}`,
@@ -100,13 +127,21 @@ export function groupBuses(arrivals: BusArrival[]): Row[] {
   return [...rows.values()]
 }
 
-async function buildBusCard(cfg: Config<'bus'>, fetch: Fetcher, index: number): Promise<TransitCard> {
-  const results = await Promise.allSettled(cfg.stops.map(stop => fetch('/bus/arrivals', { stop, limit: 12 })))
-  const ok = results.flatMap(r => (r.status === 'fulfilled' ? [cast<BusArrivals>(r.value)] : []))
+async function buildBusCard(
+  cfg: Config<'bus'>,
+  fetch: Fetcher,
+  index: number,
+): Promise<TransitCard> {
+  const results = await Promise.allSettled(
+    cfg.stops.map((stop) => fetch('/bus/arrivals', { stop, limit: 12 })),
+  )
+  const ok = results.flatMap((r) => (r.status === 'fulfilled' ? [cast<BusArrivals>(r.value)] : []))
   if (ok.length === 0) throw (results[0] as PromiseRejectedResult).reason
-  const merged = ok.flatMap(r => r.arrivals).sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity))
-  const rows = groupBuses(merged).map(r => ({ ...r, deps: r.deps.slice(0, MAX_DEPS) }))
-  const updated = Math.min(...ok.map(r => r.updatedAt ?? Infinity))
+  const merged = ok
+    .flatMap((r) => r.arrivals)
+    .sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity))
+  const rows = groupBuses(merged).map((r) => ({ ...r, deps: r.deps.slice(0, MAX_DEPS) }))
+  const updated = Math.min(...ok.map((r) => r.updatedAt ?? Infinity))
   return {
     id: `bus-${index}`,
     kind: 'bus',
@@ -139,19 +174,27 @@ async function buildBikeCard(
   cfg: Config<'citibike'>,
   fetch: Fetcher,
   index: number,
-  location: BoardConfig['location']
+  location: BoardConfig['location'],
 ): Promise<BikeCard> {
   let stations: Station[]
   let updatedAt: number | null
   if (cfg.ids) {
-    const results = await Promise.allSettled(cfg.ids.map(id => fetch('/citibike/station', { id })))
-    const ok = results.flatMap(r => (r.status === 'fulfilled' ? [cast<StationResponse>(r.value)] : []))
+    const results = await Promise.allSettled(
+      cfg.ids.map((id) => fetch('/citibike/station', { id })),
+    )
+    const ok = results.flatMap((r) =>
+      r.status === 'fulfilled' ? [cast<StationResponse>(r.value)] : [],
+    )
     if (ok.length === 0) throw (results[0] as PromiseRejectedResult).reason
-    stations = ok.map(r => station(r.station))
-    updatedAt = Math.min(...ok.map(r => r.updatedAt))
+    stations = ok.map((r) => station(r.station))
+    updatedAt = Math.min(...ok.map((r) => r.updatedAt))
   } else {
     const res = cast<NearbyStations>(
-      await fetch('/citibike/nearby', { lat: round4(location.lat), lon: round4(location.lon), n: cfg.count })
+      await fetch('/citibike/nearby', {
+        lat: round4(location.lat),
+        lon: round4(location.lon),
+        n: cfg.count,
+      }),
     )
     stations = res.stations.map(station)
     updatedAt = res.updatedAt
@@ -178,7 +221,13 @@ export function mergeAlerts(responses: AlertsResponse[], max: number): AlertItem
   return [...seen.values()]
     .sort(byImportance)
     .slice(0, max)
-    .map(a => ({ id: a.id, header: a.header, category: a.category, planned: a.planned, routes: a.routes.map(bullet) }))
+    .map((a) => ({
+      id: a.id,
+      header: a.header,
+      category: a.category,
+      planned: a.planned,
+      routes: a.routes.map(bullet),
+    }))
 }
 
 /** The tag for the first alert (the API lists the most serious first), without "Planned - ". */
@@ -198,12 +247,12 @@ export function subwayRowAlerts(
   alerts: RawAlert[],
   route: string,
   direction: string | undefined,
-  stationStops: ReadonlySet<string>
+  stationStops: ReadonlySet<string>,
 ): RawAlert[] {
-  return alerts.filter(a => {
-    if (!a.routes.some(r => baseRoute(r.id) === baseRoute(route))) return false
-    const here = a.stops.filter(s => stationStops.has(s.id))
-    return here.length === 0 || here.some(s => s.direction === null || s.direction === direction)
+  return alerts.filter((a) => {
+    if (!a.routes.some((r) => baseRoute(r.id) === baseRoute(route))) return false
+    const here = a.stops.filter((s) => stationStops.has(s.id))
+    return here.length === 0 || here.some((s) => s.direction === null || s.direction === direction)
   })
 }
 
@@ -216,25 +265,32 @@ type Alerts = {
 }
 
 /** Calls `call` for each key in parallel and keeps the answers that came back, by key. */
-async function settledMap<T>(keys: string[], call: (key: string) => Promise<unknown>): Promise<Map<string, T>> {
+async function settledMap<T>(
+  keys: string[],
+  call: (key: string) => Promise<unknown>,
+): Promise<Map<string, T>> {
   const results = await Promise.allSettled(keys.map(call))
-  return new Map(results.flatMap((r, i) => (r.status === 'fulfilled' ? [[keys[i]!, cast<T>(r.value)] as const] : [])))
+  return new Map(
+    results.flatMap((r, i) =>
+      r.status === 'fulfilled' ? [[keys[i]!, cast<T>(r.value)] as const] : [],
+    ),
+  )
 }
 
 async function buildAlerts(
   cfg: Config<'alerts'> | undefined,
   subwayCardStops: string[],
-  fetch: Fetcher
+  fetch: Fetcher,
 ): Promise<Alerts> {
   const panelStops = cfg?.subwayStops ?? []
   const busRoutes = cfg?.busRoutes ?? []
   const [subway, bus] = await Promise.all([
-    settledMap<SubwayAlertsResponse>([...new Set([...panelStops, ...subwayCardStops])], stop =>
-      fetch('/subway/alerts', { stop })
+    settledMap<SubwayAlertsResponse>([...new Set([...panelStops, ...subwayCardStops])], (stop) =>
+      fetch('/subway/alerts', { stop }),
     ),
-    settledMap<AlertsResponse>(busRoutes, route => fetch('/bus/alerts', { route })),
+    settledMap<AlertsResponse>(busRoutes, (route) => fetch('/bus/alerts', { route })),
   ])
-  const strip = [...panelStops.flatMap(s => subway.get(s) ?? []), ...bus.values()]
+  const strip = [...panelStops.flatMap((s) => subway.get(s) ?? []), ...bus.values()]
   return {
     status: panelStops.length + busRoutes.length > 0 && strip.length === 0 ? 'error' : 'ok',
     items: cfg ? mergeAlerts(strip, cfg.maxAlerts) : [],
@@ -251,15 +307,18 @@ function tagRows(card: TransitCard, panel: PanelConfig, alerts: Alerts) {
     if (!res) card.partial = true
     const stationStops = new Set(res?.stop?.stops)
     for (const row of card.rows)
-      row.alert = rowAlert(subwayRowAlerts(res?.alerts ?? [], row.route, row.direction, stationStops))
+      row.alert = rowAlert(
+        subwayRowAlerts(res?.alerts ?? [], row.route, row.direction, stationStops),
+      )
   } else if (panel.kind === 'bus') {
     // incidents only: planned bus work runs for weeks, often far from this stop. Matched on the
     // alerts' own route ids, since busRoutes can spell a route several ways (`b62`, `M15-SBS`).
     const incidents = [...alerts.bus.values()]
-      .flatMap(r => r.alerts)
-      .filter(a => !a.planned)
+      .flatMap((r) => r.alerts)
+      .filter((a) => !a.planned)
       .sort(byImportance)
-    for (const row of card.rows) row.alert = rowAlert(incidents.filter(a => a.routes.some(r => r.id === row.route)))
+    for (const row of card.rows)
+      row.alert = rowAlert(incidents.filter((a) => a.routes.some((r) => r.id === row.route)))
   }
 }
 
@@ -275,7 +334,8 @@ function failed(cfg: PanelConfig, index: number): Card {
       stations: [],
     }
   const kind = cfg.kind as 'subway' | 'bus' | 'path'
-  const title = ('title' in cfg && cfg.title) || { subway: 'Subway', bus: 'Nearby buses', path: 'PATH' }[kind]
+  const title =
+    ('title' in cfg && cfg.title) || { subway: 'Subway', bus: 'Nearby buses', path: 'PATH' }[kind]
   return {
     id: `${kind}-${index}`,
     kind,
@@ -287,9 +347,14 @@ function failed(cfg: PanelConfig, index: number): Card {
   }
 }
 
-export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: number, version: string): Promise<Board> {
+export async function buildBoard(
+  config: BoardConfig,
+  fetch: Fetcher,
+  now: number,
+  version: string,
+): Promise<Board> {
   const alertsCfg = config.panels.find((p): p is Config<'alerts'> => p.kind === 'alerts')
-  const subwayStops = config.panels.flatMap(p => (p.kind === 'subway' ? [p.stop] : []))
+  const subwayStops = config.panels.flatMap((p) => (p.kind === 'subway' ? [p.stop] : []))
   // everything fans out in parallel; alerts tag the subway and bus rows afterwards
   const [alerts, settled] = await Promise.all([
     buildAlerts(alertsCfg, subwayStops, fetch),
@@ -307,7 +372,7 @@ export async function buildBoard(config: BoardConfig, fetch: Fetcher, now: numbe
           case 'alerts':
             return Promise.resolve(null)
         }
-      })
+      }),
     ),
   ])
   const cards: Card[] = []

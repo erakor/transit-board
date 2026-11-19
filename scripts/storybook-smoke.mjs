@@ -16,10 +16,15 @@ const TYPES = {
   '.woff2': 'font/woff2',
 }
 const server = createServer(async (req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '')
+  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(
+    /^(\.\.[/\\])+/,
+    '',
+  )
   try {
     const body = await readFile(join(dir, path === '/' ? 'index.html' : path))
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream' }).end(body)
+    res
+      .writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream' })
+      .end(body)
   } catch {
     res.writeHead(404).end()
   }
@@ -28,26 +33,34 @@ const base = `http://localhost:${server.address().port}`
 
 const { entries } = JSON.parse(await readFile(join(dir, 'index.json'), 'utf8'))
 const ids = Object.values(entries)
-  .filter(e => e.type === 'story')
-  .map(e => e.id)
+  .filter((e) => e.type === 'story')
+  .map((e) => e.id)
 const browser = await chromium.launch()
 const failures = []
 for (const id of ids) {
   const page = await browser.newPage()
-  page.on('pageerror', e => failures.push(`${id}: ${e.message}`))
+  page.on('pageerror', (e) => failures.push(`${id}: ${e.message}`))
   await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`)
   await page
-    .waitForFunction(() => /sb-show-(main|errordisplay|nopreview)/.test(document.body.className), null, {
-      timeout: 15_000,
-    })
+    .waitForFunction(
+      () => /sb-show-(main|errordisplay|nopreview)/.test(document.body.className),
+      null,
+      {
+        timeout: 15_000,
+      },
+    )
     .catch(() => failures.push(`${id}: did not render`))
   if (await page.evaluate(() => !document.body.classList.contains('sb-show-main')))
-    failures.push(`${id}: ${(await page.textContent('#error-message').catch(() => null))?.trim() || 'error screen'}`)
+    failures.push(
+      `${id}: ${(await page.textContent('#error-message').catch(() => null))?.trim() || 'error screen'}`,
+    )
   await page.close()
 }
 await browser.close()
 server.close()
-console.log(`${ids.length - new Set(failures.map(f => f.split(':')[0])).size}/${ids.length} stories rendered`)
+console.log(
+  `${ids.length - new Set(failures.map((f) => f.split(':')[0])).size}/${ids.length} stories rendered`,
+)
 if (failures.length) {
   console.error(failures.join('\n'))
   process.exit(1)

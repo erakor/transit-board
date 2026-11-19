@@ -11,7 +11,7 @@ function currentVersion(): string {
 
 function makeFetcher(
   env: Record<string, string | undefined> = process.env,
-  now: () => number = () => Math.floor(Date.now() / 1000)
+  now: () => number = () => Math.floor(Date.now() / 1000),
 ): Fetcher {
   if (env.BOARD_DEMO) return demoFetcher(now)
   const base = env.TRANSIT_BASE_URL
@@ -26,6 +26,6 @@ export async function board(env: Record<string, string | undefined> = process.en
     loadConfig(env),
     makeFetcher(env, () => now),
     now,
-    currentVersion()
+    currentVersion(),
   )
 }

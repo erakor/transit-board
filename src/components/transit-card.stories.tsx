@@ -1,12 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { BikeCardView, TransitCardView } from '@/components/transit-card'
 import type { Row, TransitCard } from '@/lib/types'
-import { BIKE_CARD, BUS_CARD, PATH_CARD, SUBWAY_CARD, SUBWAY_COMPLEX_CARD } from '@/stories/demo-board'
+import {
+  BIKE_CARD,
+  BUS_CARD,
+  PATH_CARD,
+  SUBWAY_CARD,
+  SUBWAY_COMPLEX_CARD,
+} from '@/stories/demo-board'
 import { NOW, ROWS, STATIONS } from '@/stories/fixtures'
 
 /** The left column is about 49 rem wide at 1080p, the right one about 28 rem. */
-const wide = (Story: () => React.ReactNode) => <div className='flex w-[49rem] flex-col'>{Story()}</div>
-const narrow = (Story: () => React.ReactNode) => <div className='flex w-[28rem] flex-col'>{Story()}</div>
+const wide = (Story: () => React.ReactNode) => (
+  <div className="flex w-[49rem] flex-col">{Story()}</div>
+)
+const narrow = (Story: () => React.ReactNode) => (
+  <div className="flex w-[28rem] flex-col">{Story()}</div>
+)
 
 const meta = {
   title: 'Board/Transit card',
@@ -73,7 +83,7 @@ export const RowCompact = oneRow(ROWS.path, PATH_CARD)
 
 type BikeStory = StoryObj<typeof BikeCardView>
 const bike = (args: Partial<React.ComponentProps<typeof BikeCardView>>): BikeStory => ({
-  render: a => <BikeCardView {...a} />,
+  render: (a) => <BikeCardView {...a} />,
   args: { card: BIKE_CARD, stale: false, ...args },
   decorators: [narrow],
 })
@@ -84,6 +94,8 @@ export const CitiBike = bike({})
 export const CitiBikeClosedStations = bike({
   card: { ...BIKE_CARD, stations: [STATIONS.noRentals, STATIONS.noReturns] },
 })
-export const CitiBikeFullAndEmpty = bike({ card: { ...BIKE_CARD, stations: [STATIONS.full, STATIONS.empty] } })
+export const CitiBikeFullAndEmpty = bike({
+  card: { ...BIKE_CARD, stations: [STATIONS.full, STATIONS.empty] },
+})
 export const CitiBikeStale = bike({ stale: true })
 export const CitiBikeLoadError = bike({ card: { ...BIKE_CARD, status: 'error', stations: [] } })

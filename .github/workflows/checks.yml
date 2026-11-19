@@ -8,17 +8,24 @@ on:
       - synchronize
       - reopened
 
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
+  # Typecheck, lint, format, knip and unit tests: the job every erakor JS repo shares.
+  # Pinned to a toolchain commit; Renovate/Dependabot bump it with the package in package.json.
   checks:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: erakor/toolchain/.github/workflows/node-checks.yml@f1b5fee4e8d1d7a3df29460710db1808f5523d6f
+
+  storybook:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.draft == false }}
-    concurrency:
-      group: checks-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     timeout-minutes: 15
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -33,34 +40,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        id: install
         run: pnpm install --frozen-lockfile
 
-      # Each check runs even when an earlier one fails, so one push reports all of them.
-      - name: Type check
-        run: pnpm typecheck
-
-      - name: Lint
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm lint --max-warnings 0
-
-      - name: Format
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm format:check
-
-      - name: Unused files, exports and dependencies
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm knip
-
-      - name: Unit tests
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm test
-
       - name: Install Chromium for the Storybook smoke test
-        id: chromium
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Storybook smoke test
-        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         run: pnpm test:storybook
