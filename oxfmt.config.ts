@@ -1,12 +1,9 @@
-import base from '@erakor/toolchain/oxfmt'
+import base, { tailwind } from '@erakor/toolchain/oxfmt'
 
 // The shared style comes from erakor/toolchain; only what is this repo's own goes here.
 const config = {
   ...base,
-  sortTailwindcss: {
-    stylesheet: 'src/app/globals.css',
-    functions: ['cn', 'cva'],
-  },
+  sortTailwindcss: tailwind('src/app/globals.css'),
   ignorePatterns: [
     'node_modules/',
     '.next/',

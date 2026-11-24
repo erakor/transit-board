@@ -20,30 +20,9 @@ jobs:
   # Pinned to a toolchain commit; Renovate/Dependabot bump it with the package in package.json.
   checks:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: erakor/toolchain/.github/workflows/node-checks.yml@a43487e76663bd84ede121057887848f69e6016d # v1.4.0
+    uses: erakor/toolchain/.github/workflows/node-checks.yml@2234c80a5e2162b9ff6853304544715722461261 # v1.5.0 once tagged
 
+  # Builds Storybook and opens every story in Chromium (the toolchain's storybook-checks.yml).
   storybook:
-    runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.draft == false }}
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Chromium for the Storybook smoke test
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Storybook smoke test
-        run: pnpm test:storybook
+    uses: erakor/toolchain/.github/workflows/storybook-checks.yml@2234c80a5e2162b9ff6853304544715722461261 # v1.5.0 once tagged

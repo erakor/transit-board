@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "extends": ["./node_modules/@erakor/toolchain/oxlint/react.json"],
+  "extends": [
+    "./node_modules/@erakor/toolchain/oxlint/react.json",
+    "./node_modules/@erakor/toolchain/oxlint/storybook.json"
+  ],
   "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "nextjs"],
   "jsPlugins": ["@erakor/toolchain/oxlint/plugins/secret-env.mjs"],
   "rules": {
@@ -12,29 +15,6 @@
     {
       "files": ["next.config.*"],
       "rules": { "secret-env/no-secret-in-config-env": ["error", { "allow": [] }] }
-    },
-    {
-      "files": ["**/*.stories.{ts,tsx,js,jsx,mjs,cjs}", "**/*.story.{ts,tsx,js,jsx,mjs,cjs}"],
-      "jsPlugins": ["eslint-plugin-storybook"],
-      "rules": {
-        "storybook/await-interactions": "error",
-        "storybook/context-in-play-function": "error",
-        "storybook/default-exports": "error",
-        "storybook/hierarchy-separator": "warn",
-        "storybook/no-redundant-story-name": "warn",
-        "storybook/no-renderer-packages": "error",
-        "storybook/prefer-pascal-case": "warn",
-        "storybook/story-exports": "error",
-        "storybook/use-storybook-expect": "error",
-        "storybook/use-storybook-testing-library": "error",
-        "import/no-anonymous-default-export": "off",
-        "react/rules-of-hooks": "off"
-      }
-    },
-    {
-      "files": [".storybook/main.{js,cjs,mjs,ts}"],
-      "jsPlugins": ["eslint-plugin-storybook"],
-      "rules": { "storybook/no-uninstalled-addons": "error" }
     }
   ],
   "ignorePatterns": [
