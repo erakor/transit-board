@@ -20,9 +20,9 @@ jobs:
   # Pinned to a toolchain commit; Renovate/Dependabot bump it with the package in package.json.
   checks:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: erakor/toolchain/.github/workflows/node-checks.yml@2234c80a5e2162b9ff6853304544715722461261 # v1.5.0 once tagged
+    uses: erakor/toolchain/.github/workflows/node-checks.yml@1c7c1111a17a5b01999b98616554611d605b7339 # v1.5.0 once tagged
 
   # Builds Storybook and opens every story in Chromium (the toolchain's storybook-checks.yml).
   storybook:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: erakor/toolchain/.github/workflows/storybook-checks.yml@2234c80a5e2162b9ff6853304544715722461261 # v1.5.0 once tagged
+    uses: erakor/toolchain/.github/workflows/storybook-checks.yml@1c7c1111a17a5b01999b98616554611d605b7339 # v1.5.0 once tagged
